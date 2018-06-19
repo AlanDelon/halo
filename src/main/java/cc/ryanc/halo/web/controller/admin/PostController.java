@@ -377,6 +377,7 @@ public class PostController extends BaseController {
         if (StringUtils.isEmpty(result)) {
             return false;
         }
+        log.info("百度推送结果：{}", result);
         return true;
     }
 }

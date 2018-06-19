@@ -37,7 +37,7 @@
                     </#if>
                     <#if options.hux_sns_weibo??>
                     <li>
-                        <a target="_blank" href="http://weibo.com/${options.hux_sns_weibo}">
+                        <a target="_blank" href="https://weibo.com/${options.hux_sns_weibo}">
                             <span class="fa-stack fa-lg">
                                 <i class="fa fa-circle fa-stack-2x"></i>
                                 <i class="fa fa-weibo fa-stack-1x fa-inverse"></i>
@@ -69,8 +69,8 @@
                 <p class="copyright text-muted">
                     Copyright &copy; ${options.blog_title} ${options.blog_start?substring(0,4)}
                     <br>
-                    Theme by <a href="http://huangxuan.me">Hux</a> |
-                    Published with <a href="https://github.com/ruibaby/halo" target="_blank">Halo</a>
+                    <a href="http://www.itsleuth.cn">itsleuth.cn</a> |
+                    京ICP备16061303号-1
                 </p>
             </div>
         </div>

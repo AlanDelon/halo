@@ -35,7 +35,7 @@
                 <#if options.hux_style_sidebar_tags?default("true") == "true">
                 <section>
                     <!-- no hr -->
-                    <h5><a href="/tags">FEATURED TAGS</a></h5>
+                    <h5><a href="/tags">特色标签</a></h5>
                     <div class="tags">
                         <@commonTag method="tags">
                             <#if tags?? && tags?size gt 0>
@@ -53,12 +53,12 @@
                 <!-- Friends Blog -->
                 <#if options.hux_style_sidebar_links?default("true") == "true">
                     <hr>
-                    <h5>FRIENDS</h5>
+                    <h5>友情链接</h5>
                     <ul class="list-inline">
                         <@commonTag method="links">
                             <#if links?? && links?size gt 0>
                                 <#list links as link>
-                                <li><a href="${link.linkUrl}">${link.linkName}</a></li>
+                                <li><a target="_blank" href="${link.linkUrl}">${link.linkName}</a></li>
                                 </#list>
                             </#if>
                         </@commonTag>
@@ -90,7 +90,7 @@
                 <#if options.hux_style_sidebar_tags?default("true") == "true">
                 <section>
                     <hr class="hidden-sm hidden-xs">
-                    <h5><a href="/tags">FEATURED TAGS</a></h5>
+                    <h5><a href="/tags">特色标签</a></h5>
                     <div class="tags">
                         <@commonTag method="tags">
                             <#if tags?? && tags?size gt 0>
@@ -108,7 +108,7 @@
                 <!-- Short About -->
                 <section class="visible-md visible-lg">
                     <hr>
-                    <h5><a href="/p/about">ABOUT ME</a></h5>
+                    <h5><a href="/p/about">个人资料</a></h5>
                     <div class="short-about">
                         <img src="${user.userAvatar?if_exists}"/>
                         <p>${user.userDesc?if_exists}</p>
@@ -146,7 +146,7 @@
                             </#if>
                             <#if options.hux_sns_weibo??>
                             <li>
-                                <a target="_blank" href="http://weibo.com/${options.hux_sns_weibo}">
+                                <a target="_blank" href="https://weibo.com/${options.hux_sns_weibo}">
                                     <span class="fa-stack fa-lg">
                                         <i class="fa fa-circle fa-stack-2x"></i>
                                         <i class="fa fa-weibo fa-stack-1x fa-inverse"></i>
@@ -180,12 +180,12 @@
                 <!-- Friends Blog -->
                 <#if options.hux_style_sidebar_links?default("true") == "true">
                     <hr>
-                    <h5>FRIENDS</h5>
+                    <h5>友情链接</h5>
                     <ul class="list-inline">
                         <@commonTag method="links">
                             <#if links?? && links?size gt 0>
                                 <#list links as link>
-                                <li><a href="${link.linkUrl}">${link.linkName}</a></li>
+                                <li><a target="_blank" href="${link.linkUrl}">${link.linkName}</a></li>
                                 </#list>
                             </#if>
                         </@commonTag>

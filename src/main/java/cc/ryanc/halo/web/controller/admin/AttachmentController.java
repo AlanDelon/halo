@@ -136,7 +136,9 @@ public class AttachmentController {
         if (!file.isEmpty()) {
             try {
                 //程序根路径，也就是/resources
-                File basePath = new File(ResourceUtils.getURL("classpath:").getPath());
+                /// File basePath = new File(ResourceUtils.getURL("classpath:").getPath());
+                // 根路径修改为系统用户目录，不使用classpath，解决上传导致项目重启问题
+                File basePath = new File(System.getProperties().getProperty("user.home")+"/halo/");
                 //upload的路径
                 StringBuffer sbMedia = new StringBuffer("upload/");
                 //获取当前年月以创建目录，如果没有该目录则创建

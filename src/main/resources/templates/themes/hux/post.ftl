@@ -53,13 +53,19 @@
                     <#if afterPost??>
                         <li class="previous">
                             <a href="/archives/${afterPost.postUrl}" data-toggle="tooltip" data-placement="top"
-                               title="${afterPost.postTitle}">&larr; Previous Post</a>
+                               title="${afterPost.postTitle}">&larr; 上一篇
+                            <br>
+                            <span>${afterPost.postTitle}</span>
+                            </a>
                         </li>
                     </#if>
                     <#if beforePost??>
                     <li class="next">
                         <a href="/archives/${beforePost.postUrl}" data-toggle="tooltip" data-placement="top"
-                           title="${beforePost.postTitle}">Next Post &rarr;</a>
+                           title="${beforePost.postTitle}">下一篇 &rarr;
+                         <br>
+                         <span>${beforePost.postTitle}</span>
+                         </a>
                     </li>
                     </#if>
                 </ul>
@@ -76,7 +82,7 @@
                 <div class="side-catalog">
                     <hr class="hidden-sm hidden-xs">
                     <h5>
-                        <a class="catalog-toggle" href="#">CATALOG</a>
+                        <a class="catalog-toggle" href="#">文章目录</a>
                     </h5>
                     <ul class="catalog-body"></ul>
                 </div>
@@ -91,7 +97,7 @@
                 <#if options.hux_style_sidebar_tags?default("true") == "true">
                       <section>
                           <hr class="hidden-sm hidden-xs">
-                          <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                          <h5><a href="/tags/">特色标签</a></h5>
                           <div class="tags">
                               <@commonTag method="tags">
                                   <#if tags?? && tags?size gt 0>
@@ -109,7 +115,7 @@
                 <!-- Friends Blog -->
                 <#if options.hux_style_sidebar_links?default("true") == "true">
                     <hr>
-                    <h5>FRIENDS</h5>
+                    <h5>友情链接</h5>
                     <ul class="list-inline">
                         <@commonTag method="links">
                             <#if links?? && links?size gt 0>

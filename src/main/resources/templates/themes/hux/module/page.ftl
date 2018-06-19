@@ -1,4 +1,4 @@
-<#macro page title="" keywords="" description="" slogn="" cover="">
+<#macro page title="" page_title="" keywords="" description="" slogn="" cover="">
     <#include "default.ftl">
     <@default title="${title}" keywords="${keywords}" description="${description}">
 <!-- Page Header -->
@@ -7,7 +7,7 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1 ">
                 <div class="site-heading">
-                    <h1>${title}</h1>
+                    <h1>${page_title}</h1>
                     <!--<hr class="small">-->
                     <span class="subheading">${slogn}</span>
                 </div>

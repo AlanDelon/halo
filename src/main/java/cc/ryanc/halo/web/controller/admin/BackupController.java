@@ -105,7 +105,7 @@ public class BackupController {
             log.info("当前时间："+DateUtil.now()+"，执行了数据库备份。");
             return new JsonResult(1, "备份成功！");
         } catch (Exception e) {
-            log.error("未知错误：", e.getMessage());
+            log.error("未知错误：{}", e.getMessage());
             return new JsonResult(0, "备份失败！");
         }
     }
@@ -225,7 +225,7 @@ public class BackupController {
                 content.put("size", HaloUtils.parseSize(file.length()));
                 mailService.sendAttachMail(user.getUserEmail(), "有新的备份！", content, "common/mail/mail_attach.ftl", srcPath);
             } catch (Exception e) {
-                log.error("邮件服务器未配置：", e.getMessage());
+                log.error("邮件服务器未配置：{}", e.getMessage());
             }
         }
     }

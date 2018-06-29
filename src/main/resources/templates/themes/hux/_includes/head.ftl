@@ -3,6 +3,8 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="baidu-site-verification" content="oMB3PQpdvh"/>
+    <meta name="360-site-verification" content="8f07e1a448afb786170fd56beccfbe78" />
+    <meta name="sogou_site_verification" content="nPZGsgFkZN"/>
     <meta name="google-site-verification" content=""/>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="${description}">

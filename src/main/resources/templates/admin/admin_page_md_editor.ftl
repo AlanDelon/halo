@@ -57,7 +57,7 @@
                     <div class="box box-primary">
                         <!-- Editor.md编辑器 -->
                         <div class="box-body pad">
-                            <div id="markdown-editor">
+                            <div id="markdown-editor" style="z-index: 1200">
                                 <textarea style="display:none;"><#if post??>${post.postContentMd?if_exists}</#if></textarea>
                             </div>
                         </div>

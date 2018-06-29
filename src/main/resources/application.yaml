@@ -11,10 +11,16 @@ spring:
 #    password: 123456
 
     #MySql配置
+    #driver-class-name: com.mysql.jdbc.Driver
+    #url: jdbc:mysql://127.0.0.1:3306/halodb?characterEncoding=utf8&useSSL=false
+    #username: root
+    #password: root
+
+    #MySql配置
     driver-class-name: com.mysql.jdbc.Driver
-    url: jdbc:mysql://127.0.0.1:3306/halodb?characterEncoding=utf8&useSSL=false
-    username: root
-    password: root
+    url: jdbc:mysql://192.168.0.3:3306/halodb?characterEncoding=utf8&useSSL=false
+    username: halo
+    password: jd@halo
 
   h2:
     console:

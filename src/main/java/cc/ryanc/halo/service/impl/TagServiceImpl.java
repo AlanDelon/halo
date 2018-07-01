@@ -54,6 +54,11 @@ public class TagServiceImpl implements TagService {
         return tagRepository.findAll();
     }
 
+    @Override
+    public List<Tag> findAllHasPostedTags() {
+        return tagRepository.findAllHasPostedTags();
+    }
+
     /**
      * 根据编号查询标签
      *

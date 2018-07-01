@@ -98,7 +98,7 @@ public class FrontArchiveController extends BaseController {
      */
     @GetMapping(value = "{postUrl}")
     public String getPost(@PathVariable String postUrl, Model model) {
-        Post post = postService.findByPostUrl(postUrl, HaloConst.POST_TYPE_POST);
+        Post post = postService.findByStatusAndPostUrl(0, postUrl, HaloConst.POST_TYPE_POST);
         if(null==post){
             return this.renderNotFound();
         }

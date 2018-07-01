@@ -35,6 +35,12 @@ public interface TagService {
     List<Tag> findAllTags();
 
     /**
+     * 查询所有下面有已发布文章的标签
+     * @return list
+     */
+    List<Tag> findAllHasPostedTags();
+
+    /**
      * 根据编号查询标签
      *
      * @param tagId tagId

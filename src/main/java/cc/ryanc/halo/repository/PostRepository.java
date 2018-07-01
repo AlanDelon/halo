@@ -84,6 +84,16 @@ public interface PostRepository extends JpaRepository<Post, Long> {
      */
     Post findPostByPostUrlAndPostType(String postUrl, String postType);
 
+
+    /**
+     * 根据文章状态和路径查询
+     * @param status   状态0，1，2
+     * @param postUrl  路径
+     * @param postType post or page
+     * @return Post
+     */
+    Post findPostByPostStatusAndPostUrlAndPostType(Integer status, String postUrl, String postType);
+
     /**
      * 查询之后文章
      *

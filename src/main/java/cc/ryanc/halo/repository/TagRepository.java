@@ -2,6 +2,9 @@ package cc.ryanc.halo.repository;
 
 import cc.ryanc.halo.model.domain.Tag;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+
+import java.util.List;
 
 /**
  * <pre>
@@ -28,4 +31,11 @@ public interface TagRepository extends JpaRepository<Tag, Long> {
      * @return tag
      */
     Tag findTagByTagName(String tagName);
+
+    /**
+     * 查询所有下面有已发布文章的标签
+     * @return list
+     */
+    @Query(value = "select distinct t from Tag t join fetch t.posts p where p.postStatus = 0 order by p.postUrl")
+    List<Tag> findAllHasPostedTags();
 }

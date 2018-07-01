@@ -213,14 +213,19 @@ public class PostController extends BaseController {
                                    @RequestParam(value = "postTitle") String postTitle,
                                    @RequestParam(value = "postUrl") String postUrl,
                                    @RequestParam(value = "postContentMd") String postContentMd,
+                                   @RequestParam(value = "postContent") String postContent,
                                    @RequestParam(value = "postType", defaultValue = "post") String postType,
                                    HttpSession session) {
         Post post = null;
         User user = (User) session.getAttribute(HaloConst.USER_SESSION_KEY);
         if (postId == 0) {
             post = new Post();
+            post.setPostStatus(1);
+            post.setPostDate(DateUtil.date());
         } else {
             post = postService.findByPostId(postId).get();
+            post.setPostStatus(post.getPostStatus());
+            post.setPostDate(post.getPostDate());
         }
         try {
             if (StringUtils.isEmpty(postTitle)) {
@@ -236,10 +241,9 @@ public class PostController extends BaseController {
                 post.setPostUrl(postUrl);
             }
             post.setPostId(postId);
-            post.setPostStatus(1);
             post.setPostContentMd(postContentMd);
+            post.setPostContent(postContent);
             post.setPostType(postType);
-            post.setPostDate(DateUtil.date());
             post.setPostUpdate(DateUtil.date());
             post.setUser(user);
         } catch (Exception e) {
@@ -277,7 +281,7 @@ public class PostController extends BaseController {
     public String moveToPublish(@RequestParam("postId") Long postId,
                                 @RequestParam("status") Integer status) {
         try {
-            postService.updatePostStatus(postId, 0);
+            postService.updatePostStatus(postId, status);
             log.info("编号为" + postId + "的文章已改变为发布状态");
         } catch (Exception e) {
             log.error("未知错误：{0}", e.getMessage());

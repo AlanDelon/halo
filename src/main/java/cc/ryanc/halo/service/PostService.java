@@ -112,6 +112,15 @@ public interface PostService {
     Post findByPostUrl(String postUrl, String postType);
 
     /**
+     * 根据文章状态和路径查询
+     * @param status   状态0，1，2
+     * @param postUrl  路径
+     * @param postType post or page
+     * @return Post
+     */
+    Post findByStatusAndPostUrl(Integer status, String postUrl, String postType);
+
+    /**
      * 查询前五条数据
      *
      * @return List

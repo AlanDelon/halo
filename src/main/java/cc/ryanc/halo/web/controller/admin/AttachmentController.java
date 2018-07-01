@@ -229,7 +229,8 @@ public class AttachmentController {
             //刷新HaloConst变量
             updateConst();
             //删除文件
-            File basePath = new File(ResourceUtils.getURL("classpath:").getPath());
+            /// File basePath = new File(ResourceUtils.getURL("classpath:").getPath());
+            File basePath = new File(System.getProperties().getProperty("user.home")+"/halo/");
             File mediaPath = new File(basePath.getAbsolutePath(), attachment.get().getAttachPath().substring(0, attachment.get().getAttachPath().lastIndexOf('/')));
             File delFile = new File(new StringBuffer(mediaPath.getAbsolutePath()).append("/").append(delFileName).toString());
             File delSmallFile = new File(new StringBuffer(mediaPath.getAbsolutePath()).append("/").append(delSmallFileName).toString());

@@ -29,12 +29,12 @@
             <li class="treeview">
                 <a data-pjax="true" href="#">
                     <i class="fa  fa-book"></i>
-                    <span>文章</span>
+                    <span>文章管理</span>
                     <span class="pull-right-container"><i class="fa fa-angle-left pull-right"></i></span>
                 </a>
                 <ul class="treeview-menu" style="">
                     <li><a data-pjax="true" href="/admin/posts"><i class="fa fa-circle-o"></i>所有文章</a></li>
-                    <li><a data-pjax="false" href="/admin/posts/new"><i class="fa fa-circle-o"></i>写文章</a></li>
+                    <li><a data-pjax="false" href="/admin/posts/new"><i class="fa fa-circle-o"></i>新建文章</a></li>
                     <li><a data-pjax="true" href="/admin/category"><i class="fa fa-circle-o"></i>分类目录</a></li>
                     <li><a data-pjax="true" href="/admin/tag"><i class="fa fa-circle-o"></i>标签</a></li>
                 </ul>

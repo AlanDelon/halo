@@ -56,7 +56,7 @@ public class CategoryServiceImpl implements CategoryService {
      * @return List
      */
     @Override
-    @Cacheable(value = CATEGORIES_CACHE_NAME, key = "'category'")
+    ///@Cacheable(value = CATEGORIES_CACHE_NAME, key = "'category'")
     public List<Category> findAllCategories() {
         return categoryRepository.findAll();
     }

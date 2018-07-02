@@ -4,11 +4,11 @@ import cc.ryanc.halo.model.domain.Comment;
 import cc.ryanc.halo.model.domain.Post;
 import cc.ryanc.halo.model.dto.HaloConst;
 import cc.ryanc.halo.model.dto.JsonResult;
+import cc.ryanc.halo.model.enums.PostType;
 import cc.ryanc.halo.service.CommentService;
 import cc.ryanc.halo.service.MailService;
 import cc.ryanc.halo.service.PostService;
 import cc.ryanc.halo.service.UserService;
-import cc.ryanc.halo.utils.HaloUtils;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.URLUtil;
 import cn.hutool.extra.servlet.ServletUtil;
@@ -24,7 +24,10 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -52,7 +55,7 @@ public class FrontCommentController {
      * 获取文章的评论
      *
      * @param postId postId 文章编号
-     * @return List<Comment>集合</>
+     * @return List
      */
     @GetMapping(value = "/getComment/{postId}", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ResponseBody
@@ -72,7 +75,7 @@ public class FrontCommentController {
      *
      * @param page 页码
      * @param post 当前文章
-     * @return List<Comment></>
+     * @return List
      */
     @GetMapping(value = "/loadComment")
     @ResponseBody
@@ -90,7 +93,7 @@ public class FrontCommentController {
      * @param comment comment实体
      * @param post    post实体
      * @param request request
-     * @return true：评论成功，false：评论失败
+     * @return JsonResult
      */
     @PostMapping(value = "/newComment")
     @ResponseBody
@@ -147,7 +150,7 @@ public class FrontCommentController {
                     Map<String, Object> map = new HashMap<>();
                     map.put("author", userService.findUser().getUserDisplayName());
                     map.put("pageName", post.getPostTitle());
-                    if (StringUtils.equals(post.getPostType(), HaloConst.POST_TYPE_POST)) {
+                    if (StringUtils.equals(post.getPostType(), PostType.POST_TYPE_POST.getDesc())) {
                         map.put("pageUrl", HaloConst.OPTIONS.get("blog_url") + "/archives/" + post.getPostUrl() + "#comment-id-" + comment.getCommentId());
                     } else {
                         map.put("pageUrl", HaloConst.OPTIONS.get("blog_url") + "/p/" + post.getPostUrl() + "#comment-id-" + comment.getCommentId());
@@ -187,7 +190,7 @@ public class FrontCommentController {
                     map.put("blogTitle",HaloConst.OPTIONS.get("blog_title"));
                     map.put("commentAuthor",lastComment.getCommentAuthor());
                     map.put("pageName",lastComment.getPost().getPostTitle());
-                    if (StringUtils.equals(post.getPostType(), HaloConst.POST_TYPE_POST)) {
+                    if (StringUtils.equals(post.getPostType(), PostType.POST_TYPE_POST.getDesc())) {
                         map.put("pageUrl", HaloConst.OPTIONS.get("blog_url") + "/archives/" + post.getPostUrl() + "#comment-id-" + comment.getCommentId());
                     } else {
                         map.put("pageUrl", HaloConst.OPTIONS.get("blog_url") + "/p/" + post.getPostUrl() + "#comment-id-" + comment.getCommentId());

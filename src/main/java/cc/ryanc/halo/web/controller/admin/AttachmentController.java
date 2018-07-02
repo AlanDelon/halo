@@ -11,6 +11,7 @@ import cc.ryanc.halo.utils.HaloUtils;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.extra.servlet.ServletUtil;
 import lombok.extern.slf4j.Slf4j;
+import net.coobird.thumbnailator.Thumbnails;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -23,14 +24,14 @@ import org.springframework.util.ResourceUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.imageio.ImageIO;
 import javax.servlet.http.HttpServletRequest;
 import javax.websocket.server.PathParam;
-import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FileInputStream;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Random;
 
 /**
  * @author : RYAN0UP
@@ -100,7 +101,7 @@ public class AttachmentController {
      *
      * @param file    file
      * @param request request
-     * @return Map<String   ,   Object></>
+     * @return Map
      */
     @PostMapping(value = "/upload", produces = {"application/json;charset=UTF-8"})
     @ResponseBody
@@ -114,7 +115,7 @@ public class AttachmentController {
      *
      * @param file    file
      * @param request request
-     * @return Map<String   ,   Object></>
+     * @return Map
      */
     @PostMapping(value = "/upload/editor", produces = {"application/json;charset=UTF-8"})
     @ResponseBody
@@ -129,9 +130,9 @@ public class AttachmentController {
      *
      * @param file    file
      * @param request request
-     * @return Map<String   ,   Object></>
+     * @return Map
      */
-    public Map<String, Object> uploadAttachment(MultipartFile file, HttpServletRequest request) {
+    private Map<String, Object> uploadAttachment(MultipartFile file, HttpServletRequest request) {
         Map<String, Object> result = new HashMap<String, Object>();
         if (!file.isEmpty()) {
             try {
@@ -153,25 +154,20 @@ public class AttachmentController {
                 String fileName = nameWithOutSuffix+"."+fileSuffix;
                 file.transferTo(new File(mediaPath.getAbsoluteFile(), fileName));
 
+                //压缩图片
+                Thumbnails.of(new StringBuffer(mediaPath.getAbsolutePath()).append("/").append(fileName).toString()).size(256,256).keepAspectRatio(false).toFile(new StringBuffer(mediaPath.getAbsolutePath()).append("/").append(nameWithOutSuffix).append("_small.").append(fileSuffix).toString());
+
                 //保存在数据库
                 Attachment attachment = new Attachment();
                 attachment.setAttachName(fileName);
                 attachment.setAttachPath(new StringBuffer("/upload/").append(HaloUtils.YEAR).append("/").append(HaloUtils.MONTH).append("/").append(fileName).toString());
-                //判断图片大小，如果长宽都小于500，则保存原始图片路径
-                BufferedImage sourceImg = ImageIO.read(new FileInputStream(mediaPath.getPath() + "/" + fileName));
-                if (sourceImg.getWidth() < 500 || sourceImg.getHeight() < 500) {
-                    attachment.setAttachSmallPath(new StringBuffer("/upload/").append(HaloUtils.YEAR).append("/").append(HaloUtils.MONTH).append("/").append(fileName).toString());
-                } else {
-                    attachment.setAttachSmallPath(new StringBuffer("/upload/").append(HaloUtils.YEAR).append("/").append(HaloUtils.MONTH).append("/").append(nameWithOutSuffix).append("_small.").append(fileSuffix).toString());
-                    //剪裁图片
-                    HaloUtils.cutCenterImage(new StringBuffer(mediaPath.getAbsolutePath()).append("/").append(fileName).toString(), new StringBuffer(mediaPath.getAbsolutePath()).append("/").append(nameWithOutSuffix).append("_small.").append(fileSuffix).toString(), 500, 500, fileSuffix);
-                }
-
+                attachment.setAttachSmallPath(new StringBuffer("/upload/").append(HaloUtils.YEAR).append("/").append(HaloUtils.MONTH).append("/").append(nameWithOutSuffix).append("_small.").append(fileSuffix).toString());
                 attachment.setAttachType(file.getContentType());
                 attachment.setAttachSuffix(new StringBuffer(".").append(fileSuffix).toString());
                 attachment.setAttachCreated(DateUtil.date());
+                attachment.setAttachSize(HaloUtils.parseSize(new File(mediaPath,fileName).length()));
+                attachment.setAttachWh(HaloUtils.getImageWh(new File(mediaPath,fileName)));
                 attachmentService.saveByAttachment(attachment);
-
                 updateConst();
                 log.info("上传文件[" + fileName + "]到[" + mediaPath.getAbsolutePath() + "]成功");
                 logsService.saveByLogs(
@@ -182,7 +178,8 @@ public class AttachmentController {
                 result.put("message", "上传成功！");
                 result.put("url", attachment.getAttachPath());
             } catch (Exception e) {
-                log.error("未知错误：{0}", e.getMessage());
+                log.error("未知错误：", e.getMessage());
+                e.printStackTrace();
                 result.put("success", 0);
                 result.put("message", "上传失败！");
             }
@@ -235,17 +232,8 @@ public class AttachmentController {
             File mediaPath = new File(basePath.getAbsolutePath(), attachment.get().getAttachPath().substring(0, attachment.get().getAttachPath().lastIndexOf('/')));
             File delFile = new File(new StringBuffer(mediaPath.getAbsolutePath()).append("/").append(delFileName).toString());
             File delSmallFile = new File(new StringBuffer(mediaPath.getAbsolutePath()).append("/").append(delSmallFileName).toString());
-
-            BufferedImage sourceImg = ImageIO.read(new FileInputStream(delFile));
-            if (sourceImg.getWidth() > 500 && sourceImg.getHeight() > 500) {
-                if (delSmallFile.exists()) {
-                    if (delSmallFile.delete()) {
-                        updateConst();
-                    }
-                }
-            }
             if (delFile.exists() && delFile.isFile()) {
-                if (delFile.delete()) {
+                if (delFile.delete() && delSmallFile.delete()) {
                     updateConst();
                     log.info("删除文件[" + delFileName + "]成功！");
                     logsService.saveByLogs(

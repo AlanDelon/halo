@@ -1,3 +1,4 @@
+<#compress >
 <#include "module/_macro.ftl">
 <@head title="${options.blog_title} | 后台管理：文章编辑"></@head>
 <div class="wrapper">
@@ -29,7 +30,7 @@
                     <a data-pjax="true" href="#"><i class="fa fa-dashboard"></i> 首页</a>
                 </li>
                 <li>
-                    <a data-pjax="true" href="/admin/posts">文章</a>
+                    <a data-pjax="true" href="/admin/posts">文章管理</a>
                 </li>
                 <li class="active">新建文章</li>
             </ol>
@@ -287,7 +288,8 @@
                 });
             }
             $('#btn_input_postUrl').click(function () {
-                $('#postUrl').html("<input type='text' id='newPostUrl' onblur='urlOnBlurAuto()' value=''>");
+                var postUrl = $("#postUrl").html();
+                $('#postUrl').html("<input type='text' id='newPostUrl' onblur='urlOnBlurAuto()' value='"+postUrl+"'>");
                 $(this).hide();
                 $('#btn_change_postUrl').show();
             });
@@ -415,3 +417,4 @@
     <#include "module/_footer.ftl">
 </div>
 <@footer></@footer>
+</#compress>

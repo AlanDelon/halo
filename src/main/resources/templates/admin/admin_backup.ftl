@@ -1,3 +1,4 @@
+<#compress >
 <#include "module/_macro.ftl">
 <@head title="${options.blog_title} | 后台管理：备份"></@head>
 <div class="wrapper">
@@ -10,13 +11,13 @@
             .resourceType,.databaseType,.postType{list-style:none;float:left;margin:0;padding-bottom:10px}
         </style>
         <section class="content-header">
-            <h1 style="display: inline-block;">博客备份</h1>
+            <h1 style="display: inline-block;">备份管理</h1>
             <ol class="breadcrumb">
                 <li>
                     <a href="/admin"><i class="fa fa-dashboard"></i> 首页</a>
                 </li>
                 <li><a href="#">设置</a></li>
-                <li class="active">博客备份</li>
+                <li class="active">备份管理</li>
             </ol>
         </section>
         <section class="content container-fluid">
@@ -49,7 +50,7 @@
                                 </thead>
                                 <tbody>
                                     <#if backups?size gt 0>
-                                        <#list backups as backup>
+                                        <#list backups?sort_by("createAt")?reverse as backup>
                                             <tr>
                                                 <td>${backup.fileName}</td>
                                                 <td>${backup.createAt?string("yyyy-MM-dd HH:mm")}</td>
@@ -229,3 +230,4 @@
     <#include "module/_footer.ftl">
 </div>
 <@footer></@footer>
+</#compress>

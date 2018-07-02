@@ -1,3 +1,4 @@
+<#compress >
 <#include "module/_macro.ftl">
 <@head title="${options.blog_title} | 后台管理：主题编辑"></@head>
 <div class="wrapper">
@@ -77,7 +78,10 @@
                                                         <#break>
                                                         <#case "gallery.ftl">
                                                         图库页面
-                                                        <#break>
+                                                        <#break >
+                                                        <#case "module/options.ftl">
+                                                        设置选项
+                                                        <#break >
                                                     </#switch>
                                                 </td>
                                             </tr>
@@ -131,7 +135,7 @@
                     $('#tplNameTitle').html('');
                 }
             }
-            
+
             function saveTpl() {
                 $.ajax({
                     type: 'POST',
@@ -179,3 +183,4 @@
     <#include "module/_footer.ftl">
 </div>
 <@footer></@footer>
+</#compress>

@@ -1,5 +1,6 @@
 package cc.ryanc.halo.config;
 
+import cc.ryanc.halo.web.interceptor.ApiInterceptor;
 import cc.ryanc.halo.web.interceptor.InstallInterceptor;
 import cc.ryanc.halo.web.interceptor.LoginInterceptor;
 import lombok.extern.slf4j.Slf4j;
@@ -7,10 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
-import org.springframework.web.servlet.config.annotation.EnableWebMvc;
-import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
-import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.servlet.config.annotation.*;
 
 /**
  * <pre>
@@ -33,6 +31,9 @@ public class MvcConfig implements WebMvcConfigurer {
     @Autowired
     private InstallInterceptor installInterceptor;
 
+    @Autowired
+    private ApiInterceptor apiInterceptor;
+
     /**
      * 注册拦截器
      *
@@ -51,6 +52,8 @@ public class MvcConfig implements WebMvcConfigurer {
                 .excludePathPatterns("/install")
                 .excludePathPatterns("/install/do")
                 .excludePathPatterns("/static/**");
+        registry.addInterceptor(apiInterceptor)
+                .addPathPatterns("/api/**");
     }
 
     /**
@@ -71,5 +74,14 @@ public class MvcConfig implements WebMvcConfigurer {
                 .addResourceLocations("classpath:/static/images/favicon.ico");
         registry.addResourceHandler("/backup/**")
                 .addResourceLocations("file:///" + System.getProperties().getProperty("user.home") + "/halo/backup/");
+    }
+
+    @Override
+    public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping("/**")
+                .allowCredentials(true)
+                .allowedHeaders("*")
+                .allowedOrigins("*")
+                .allowedMethods("*");
     }
 }

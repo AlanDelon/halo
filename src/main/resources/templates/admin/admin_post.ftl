@@ -96,16 +96,15 @@
                                                         <#case 0>
                                                             <a href="/archives/${post.postUrl}" class="btn btn-primary btn-xs " target="_blank">查看</a>
                                                             <a href="/admin/posts/edit?postId=${post.postId?c}" class="btn btn-info btn-xs ">编辑</a>
-                                                            <button class="btn btn-danger btn-xs " onclick="modelShow('/admin/posts/throw?postId=${post.postId?c}&status=0','确定移到回收站？')">丢弃</button>
+                                                            <button class="btn btn-danger btn-xs " onclick="modelShow('/admin/posts/revert?postId=${post.postId?c}&status=1','确定下线此篇文章？')">下线</button>
                                                             <#break >
                                                         <#case 1>
-                                                            <a href="/admin/posts/edit?postId=${post.postId?c}"
-                                                               class="btn btn-info btn-xs ">编辑</a>
-                                                            <button class="btn btn-primary btn-xs " onclick="modelShow('/admin/posts/revert?postId=${post.postId?c}&status=1','确定发布该文章？')">发布</button>
-                                                            <button class="btn btn-danger btn-xs " onclick="modelShow('/admin/posts/throw?postId=${post.postId?c}&status=1','确定移到回收站？')">丢弃</button>
+                                                            <a href="/admin/posts/edit?postId=${post.postId?c}" class="btn btn-info btn-xs ">编辑</a>
+                                                            <button class="btn btn-primary btn-xs " onclick="modelShow('/admin/posts/revert?postId=${post.postId?c}&status=0','确定发布该文章？')">发布</button>
+                                                            <button class="btn btn-danger btn-xs " onclick="modelShow('/admin/posts/throw?postId=${post.postId?c}&status=2','确定移到回收站？')">丢弃</button>
                                                             <#break >
                                                         <#case 2>
-                                                            <a href="/admin/posts/revert?postId=${post.postId?c}&status=2" class="btn btn-primary btn-xs ">还原</a>
+                                                            <button class="btn btn-primary btn-xs " onclick="modelShow('/admin/posts/revert?postId=${post.postId?c}&status=1','确定还原文章至草稿？')">还原</button>
                                                             <button class="btn btn-danger btn-xs " onclick="modelShow('/admin/posts/remove?postId=${post.postId?c}&postType=${post.postType}','确定永久删除？(不可逆)')">永久删除</button>
                                                             <#break >
                                                     </#switch>

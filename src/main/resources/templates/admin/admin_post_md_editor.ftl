@@ -79,7 +79,7 @@
                         <div class="box-footer">
                             <button onclick="push(1)" class="btn btn-default btn-sm ">保存草稿</button>
                             <button onclick="push(0)" class="btn btn-primary btn-sm pull-right " data-loading-text="发布中...">
-                            <#if post??>
+                            <#if post?? && post.postStatus == 0>
                                 更新
                                 <#else>
                                 发布
@@ -103,7 +103,13 @@
                                         <#list categories as cate>
                                             <li style="padding: 0;margin: 0px;list-style: none">
                                                 <label>
-                                                    <input name="categories" id="categories" type="checkbox" class="minimal" value="${cate.cateId}"> ${cate.cateName}
+                                                    <input name="categories" id="categories" type="checkbox" class="minimal" value="${cate.cateId}"
+                                                        <#if post?? && post.categories?size gt 0>
+                                                            <#list post.categories as category>
+                                                                <#if '${category.cateId}' ='${cate.cateId}'> checked </#if>
+                                                            </#list>
+                                                        </#if>
+                                                    > ${cate.cateName}
                                                 </label>
                                             </li>
                                         </#list>
@@ -202,7 +208,7 @@
                     scrollbar: false
                 });
             }
-            
+
             function openAttachCopy() {
                 layer.open({
                     type: 2,
@@ -318,7 +324,7 @@
                         'postUrl' : $('#postUrl').html().toString(),
                         'postContentMd': editor.getMarkdown(),
                         'postContent': editor.getHTML(),
-                        'postThumbnail': $('#selectImg')[0].src,
+                        'postThumbnail': $('#selectImg').attr('src'),
                         'cateList' : cateList.toString(),
                         'tagList' : $('#tagList').tagEditor('getTags')[0].tags.toString()
                     },
@@ -337,7 +343,7 @@
                                 loader: true,
                                 loaderBg: '#ffffff',
                                 afterHidden: function () {
-                                    window.location.href="/admin/posts";
+                                    window.location.href="/admin/posts?status=" + status;
                                 }
                             });
                         }else{
@@ -358,11 +364,15 @@
                     }
                 });
             }
-            setInterval("autoPush()","30000");
+            var autoInterval = setInterval("autoPush()", 30000);
             /**
              * 自动保存文章
              */
             function autoPush() {
+                if (typeof($('#postId').val()) == "undefined") {
+                    clearInterval(autoInterval);
+                    return;
+                }
                 var Title = "";
                 if(postTitle.val()){
                     Title = postTitle.val();
@@ -375,7 +385,8 @@
                         'postId': $('#postId').val(),
                         'postTitle': Title,
                         'postUrl' : $('#postUrl').html().toString(),
-                        'postContentMd': editor.getMarkdown()
+                        'postContentMd': editor.getMarkdown(),
+                        'postContent': editor.getHTML()
                     },
                     success: function (data) {
                         if(!$("#post_title").val()){

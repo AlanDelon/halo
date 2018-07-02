@@ -52,6 +52,9 @@ public class CommonTagDirective implements TemplateDirectiveModel {
                 case "tags":
                     environment.setVariable("tags", builder.build().wrap(tagService.findAllTags()));
                     break;
+                case "frontTags":
+                    environment.setVariable("tags", builder.build().wrap(tagService.findAllHasPostedTags()));
+                    break;
                 case "links":
                     environment.setVariable("links", builder.build().wrap(linkService.findAllLinks()));
                     break;

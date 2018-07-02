@@ -20,7 +20,7 @@
         <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
             <!-- 标签云 -->
             <div id='tag_cloud' class="tags">
-                <@commonTag method="tags">
+                <@commonTag method="frontTags">
                     <#if tags?? && tags?size gt 0>
                         <#list tags as tag>
                             <a href="#${tag.tagUrl}" title="${tag.tagName}" rel="">${tag.tagName}</a>

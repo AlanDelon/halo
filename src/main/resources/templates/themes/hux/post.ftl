@@ -99,7 +99,7 @@
                           <hr class="hidden-sm hidden-xs">
                           <h5><a href="/tags/">特色标签</a></h5>
                           <div class="tags">
-                              <@commonTag method="tags">
+                              <@commonTag method="frontTags">
                                   <#if tags?? && tags?size gt 0>
                                       <#list tags as tag>
                                         <a href="/tags/#${tag.tagUrl}" title="${tag.tagName}" rel="">

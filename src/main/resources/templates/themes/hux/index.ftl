@@ -12,7 +12,7 @@
     <#--</h3>-->
     <#--{% endif %}-->
         <div class="post-content-preview">
-            ${post.postSummary}
+            ${post.postSummary?if_exists}
         </div>
     </a>
     <p class="post-meta">

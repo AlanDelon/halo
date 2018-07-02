@@ -170,6 +170,18 @@ public class PostServiceImpl implements PostService {
     }
 
     /**
+     * 根据文章状态和路径查询
+     * @param status   状态0，1，2
+     * @param postUrl  路径
+     * @param postType post or page
+     * @return Post
+     */
+    @Override
+    public Post findByStatusAndPostUrl(Integer status, String postUrl, String postType) {
+        return postRepository.findPostByPostStatusAndPostUrlAndPostType(status, postUrl, postType);
+    }
+
+    /**
      * 查询最新的5篇文章
      *
      * @return list

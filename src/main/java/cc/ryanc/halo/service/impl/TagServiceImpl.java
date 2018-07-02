@@ -4,6 +4,8 @@ import cc.ryanc.halo.model.domain.Tag;
 import cc.ryanc.halo.repository.TagRepository;
 import cc.ryanc.halo.service.TagService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -20,6 +22,8 @@ public class TagServiceImpl implements TagService {
     @Autowired
     private TagRepository tagRepository;
 
+    private static final String TAGS_CACHE_NAME = "tags";
+
     /**
      * 新增/修改标签
      *
@@ -27,6 +31,7 @@ public class TagServiceImpl implements TagService {
      * @return Tag
      */
     @Override
+    @CacheEvict(value = TAGS_CACHE_NAME, allEntries = true, beforeInvocation = true)
     public Tag saveByTag(Tag tag) {
         return tagRepository.save(tag);
     }
@@ -38,6 +43,7 @@ public class TagServiceImpl implements TagService {
      * @return Tag
      */
     @Override
+    @CacheEvict(value = TAGS_CACHE_NAME, allEntries = true, beforeInvocation = true)
     public Tag removeByTagId(Long tagId) {
         Optional<Tag> tag = findByTagId(tagId);
         tagRepository.delete(tag.get());
@@ -47,9 +53,10 @@ public class TagServiceImpl implements TagService {
     /**
      * 获取所有标签
      *
-     * @return list
+     * @return List
      */
     @Override
+    @Cacheable(value = TAGS_CACHE_NAME, key = "'tag'")
     public List<Tag> findAllTags() {
         return tagRepository.findAll();
     }
@@ -63,7 +70,7 @@ public class TagServiceImpl implements TagService {
      * 根据编号查询标签
      *
      * @param tagId tagId
-     * @return Link
+     * @return Optional
      */
     @Override
     public Optional<Tag> findByTagId(Long tagId) {
@@ -74,7 +81,7 @@ public class TagServiceImpl implements TagService {
      * 根据标签路径查询
      *
      * @param tagUrl tagUrl
-     * @return tag
+     * @return Tag
      */
     @Override
     public Tag findByTagUrl(String tagUrl) {
@@ -85,7 +92,7 @@ public class TagServiceImpl implements TagService {
      * 根据标签名称查询
      *
      * @param tagName tagName
-     * @return tag
+     * @return Tag
      */
     @Override
     public Tag findTagByTagName(String tagName) {
@@ -96,7 +103,7 @@ public class TagServiceImpl implements TagService {
      * 转换标签字符串为实体集合
      *
      * @param tagList tagList
-     * @return list
+     * @return List
      */
     @Override
     public List<Tag> strListToTagList(String tagList) {

@@ -1,3 +1,4 @@
+<#compress >
 <#include "module/_macro.ftl">
 <@head title="${options.blog_title} | 后台管理：菜单设置"></@head>
 <div class="wrapper">
@@ -7,13 +8,13 @@
     <#include "module/_sidebar.ftl">
     <div class="content-wrapper">
         <section class="content-header">
-            <h1 style="display: inline-block;">菜单设置</h1>
+            <h1 style="display: inline-block;">菜单管理</h1>
             <ol class="breadcrumb">
                 <li>
                     <a data-pjax="true" href="/admin"><i class="fa fa-dashboard"></i> 首页</a>
                 </li>
                 <li><a data-pjax="true" href="#">外观</a></li>
-                <li class="active">菜单设置</li>
+                <li class="active">菜单管理</li>
             </ol>
         </section>
         <section class="content container-fluid">
@@ -174,3 +175,4 @@
     <#include "module/_footer.ftl">
 </div>
 <@footer></@footer>
+</#compress>

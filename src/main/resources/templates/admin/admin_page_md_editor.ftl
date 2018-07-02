@@ -1,3 +1,4 @@
+<#compress >
 <#include "module/_macro.ftl">
 <@head title="${options.blog_title} | 后台管理：页面编辑"></@head>
 <div class="wrapper">
@@ -30,7 +31,7 @@
                     <a data-pjax="true" href="#"><i class="fa fa-dashboard"></i> 首页</a>
                 </li>
                 <li>
-                    <a data-pjax="true" href="/admin/page">页面</a>
+                    <a data-pjax="true" href="/admin/page">页面管理</a>
                 </li>
                 <li class="active">新建页面</li>
             </ol>
@@ -314,3 +315,4 @@
     <#include "module/_footer.ftl">
 </div>
 <@footer></@footer>
+</#compress>

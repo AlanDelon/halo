@@ -4,6 +4,8 @@ import cc.ryanc.halo.model.domain.Category;
 import cc.ryanc.halo.repository.CategoryRepository;
 import cc.ryanc.halo.service.CategoryService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -20,6 +22,8 @@ public class CategoryServiceImpl implements CategoryService {
     @Autowired
     private CategoryRepository categoryRepository;
 
+    private static final String CATEGORIES_CACHE_NAME = "categories";
+
     /**
      * 保存/修改分类目录
      *
@@ -27,6 +31,7 @@ public class CategoryServiceImpl implements CategoryService {
      * @return Category
      */
     @Override
+    @CacheEvict(value = CATEGORIES_CACHE_NAME, allEntries = true, beforeInvocation = true)
     public Category saveByCategory(Category category) {
         return categoryRepository.save(category);
     }
@@ -38,6 +43,7 @@ public class CategoryServiceImpl implements CategoryService {
      * @return Category
      */
     @Override
+    @CacheEvict(value = CATEGORIES_CACHE_NAME, allEntries = true, beforeInvocation = true)
     public Category removeByCateId(Long cateId) {
         Optional<Category> category = this.findByCateId(cateId);
         categoryRepository.delete(category.get());
@@ -47,9 +53,10 @@ public class CategoryServiceImpl implements CategoryService {
     /**
      * 查询所有分类目录
      *
-     * @return list
+     * @return List
      */
     @Override
+    @Cacheable(value = CATEGORIES_CACHE_NAME, key = "'category'")
     public List<Category> findAllCategories() {
         return categoryRepository.findAll();
     }
@@ -69,13 +76,12 @@ public class CategoryServiceImpl implements CategoryService {
      * 根据分类目录路径查询，用于验证是否已经存在该路径
      *
      * @param cateUrl cateUrl
-     * @return category
+     * @return Category
      */
     @Override
     public Category findByCateUrl(String cateUrl) {
         return categoryRepository.findCategoryByCateUrl(cateUrl);
     }
-
 
     @Override
     public List<Category> strListToCateList(List<String> strings) {

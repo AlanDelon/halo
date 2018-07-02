@@ -1,3 +1,4 @@
+<#compress >
 <#include "module/_macro.ftl">
 <@head title="${options.blog_title} | 后台管理：主题"></@head>
 <div class="wrapper">
@@ -59,14 +60,14 @@
             }
         </style>
         <section class="content-header">
-            <h1 style="display: inline-block;">主题设置</h1>
+            <h1 style="display: inline-block;">主题管理</h1>
             <a id="showForm" href="#">
                 <i class="fa fa-cloud-upload" aria-hidden="true"></i>上传
             </a>
             <ol class="breadcrumb">
                 <li><a data-pjax="true" href="/admin"><i class="fa fa-dashboard"></i> 首页</a></li>
                 <li><a data-pjax="true" href="#">外观</a></li>
-                <li class="active">主题设置</li>
+                <li class="active">主题管理</li>
             </ol>
         </section>
         <section class="content container-fluid">
@@ -82,7 +83,7 @@
             <div class="row">
                 <#if themes?? && (themes?size>0)>
                     <#list themes as theme>
-                        <div class="col-md-3 theme-body">
+                        <div class="col-md-6 col-lg-3 col theme-body">
                             <div class="box box-solid">
                                 <div class="box-body theme-thumbnail" style="background-image: url(/${theme.themeName?if_exists}/screenshot.png)">
                                     <div class="pull-right btn-delete" style="display: none" onclick="modelShow('/admin/themes/remove?themeName=${theme.themeName}')"><i class="fa fa-times fa-lg" aria-hidden="true"></i></div>
@@ -277,3 +278,4 @@
     <#include "module/_footer.ftl">
 </div>
 <@footer></@footer>
+</#compress>

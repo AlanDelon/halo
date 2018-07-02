@@ -92,6 +92,11 @@
 			<version>${druid.version}</version>
 		</dependency>
 
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-cache</artifactId>
+		</dependency>
+
 		<!-- freemarker依赖 -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -153,6 +158,13 @@
 			<groupId>com.upyun</groupId>
 			<artifactId>java-sdk</artifactId>
 			<version>4.0.1</version>
+		</dependency>
+
+		<!-- 图片操作 -->
+		<dependency>
+			<groupId>net.coobird</groupId>
+			<artifactId>thumbnailator</artifactId>
+			<version>0.4.8</version>
 		</dependency>
 
 	</dependencies>

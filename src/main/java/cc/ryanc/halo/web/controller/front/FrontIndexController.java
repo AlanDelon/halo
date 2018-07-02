@@ -66,7 +66,7 @@ public class FrontIndexController extends BaseController {
         }
         //所有文章数据，分页
         Pageable pageable = PageRequest.of(page - 1, size, sort);
-        Page<Post> posts = postService.findPostByStatus(0, HaloConst.POST_TYPE_POST, pageable);
+        Page<Post> posts = postService.findPostByStatus(pageable);
         if (null == posts) {
             return this.renderNotFound();
         }
@@ -78,7 +78,7 @@ public class FrontIndexController extends BaseController {
      * ajax分页
      *
      * @param page page 当前页码
-     * @return List<Post>集合</>
+     * @return List
      */
     @GetMapping(value = "next")
     @ResponseBody
@@ -93,7 +93,7 @@ public class FrontIndexController extends BaseController {
 
         //文章数据，只获取文章，没有分页
         Pageable pageable = PageRequest.of(page - 1, size, sort);
-        List<Post> posts = postService.findPostByStatus(0, HaloConst.POST_TYPE_POST, pageable).getContent();
+        List<Post> posts = postService.findPostByStatus(pageable).getContent();
         return posts;
     }
 

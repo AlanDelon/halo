@@ -74,8 +74,11 @@
                             </div>
                         </div>
                         <div class="box-body">
-                            <div>
-                            </div>
+                            <label for="allowComment" class="control-label">开启评论：</label>
+                            <select class="form-control" id="allowComment" name="allowComment">
+                                <option value="1" <#if post?? && post.allowComment?default(1)==1>selected</#if>>是</option>
+                                <option value="0" <#if post?? && post.allowComment?default(1)==0>selected</#if>>否</option>
+                            </select>
                         </div>
                         <div class="box-footer">
                             <button onclick="push(1)" class="btn btn-default btn-sm ">保存草稿</button>
@@ -110,7 +113,6 @@
                 </div>
             </div>
         </section>
-        <script src="/static/plugins/layer/layer.js"></script>
         <script src="/static/plugins/editor.md/editormd.min.js"></script>
         <script>
 
@@ -153,7 +155,13 @@
                     imageFormats : ["jpg", "jpeg", "gif", "png", "bmp", "webp"],
                     imageUploadURL : "/admin/attachments/upload/editor",
                     htmlDecode: "script",
-                    tocStartLevel : 1
+                    tocStartLevel : 1,
+                    onfullscreen : function() {
+                        $("#markdown-editor").css("z-index","9999");
+                    },
+                    onfullscreenExit : function() {
+                        $("#markdown-editor").css("z-index","");
+                    }
                     // toolbarIcons : function () {
                     //     return editormd.toolbarModes["simple"];
                     // }
@@ -180,7 +188,7 @@
                         'postUrl': $('#newPostUrl').val()
                     },
                     success: function (data) {
-                        if(data==true){
+                        if(data.code==0){
                             showMsg("该路径已经存在！","info",2000);
                             return;
                         }else{
@@ -228,7 +236,8 @@
                         'postUrl' : $('#postUrl').html().toString(),
                         'postContentMd': editor.getMarkdown(),
                         'postContent': editor.getTextareaSavedHTML(),
-                        'postThumbnail': $('#selectImg')[0].src
+                        'postThumbnail': $('#selectImg')[0].src,
+                        'allowComment' : $('#allowComment').val()
                     },
                     success: function (data) {
                         if(data.code==1){
@@ -267,7 +276,7 @@
                 });
             }
 
-            setInterval("autoPush()","30000");
+            setInterval("autoPush()","60000");
             /**
              * 自动保存文章
              */

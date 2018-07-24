@@ -2,9 +2,12 @@ package cc.ryanc.halo.web.controller.front;
 
 import cc.ryanc.halo.model.domain.Comment;
 import cc.ryanc.halo.model.domain.Post;
+import cc.ryanc.halo.model.enums.CommentStatus;
+import cc.ryanc.halo.model.enums.PostStatus;
 import cc.ryanc.halo.model.enums.PostType;
 import cc.ryanc.halo.service.CommentService;
 import cc.ryanc.halo.service.PostService;
+import cc.ryanc.halo.utils.CommentUtil;
 import cc.ryanc.halo.web.controller.core.BaseController;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -61,8 +64,8 @@ public class FrontArchiveController extends BaseController {
         //所有文章数据，分页，material主题适用
         Sort sort = new Sort(Sort.Direction.DESC, "postDate");
         Pageable pageable = PageRequest.of(page - 1, 5, sort);
-        Page<Post> posts = postService.findPostByStatus(0, PostType.POST_TYPE_POST.getDesc(), pageable);
-        if(null==posts){
+        Page<Post> posts = postService.findPostByStatus(PostStatus.PUBLISHED.getCode(), PostType.POST_TYPE_POST.getDesc(), pageable);
+        if (null == posts) {
             return this.renderNotFound();
         }
         model.addAttribute("posts", posts);
@@ -82,7 +85,7 @@ public class FrontArchiveController extends BaseController {
                            @PathVariable(value = "year") String year,
                            @PathVariable(value = "month") String month) {
         Page<Post> posts = postService.findPostByYearAndMonth(year, month, null);
-        if(null==posts){
+        if (null == posts) {
             return this.renderNotFound();
         }
         model.addAttribute("posts", posts);
@@ -99,7 +102,7 @@ public class FrontArchiveController extends BaseController {
     @GetMapping(value = "{postUrl}")
     public String getPost(@PathVariable String postUrl, Model model) {
         Post post = postService.findByStatusAndPostUrl(0, postUrl, PostType.POST_TYPE_POST.getDesc());
-        if(null==post){
+        if (null == post) {
             return this.renderNotFound();
         }
         //获得当前文章的发布日期
@@ -115,11 +118,10 @@ public class FrontArchiveController extends BaseController {
         if (null != afterPosts && afterPosts.size() > 0) {
             model.addAttribute("afterPost", afterPosts.get(afterPosts.size() - 1));
         }
-        Sort sort = new Sort(Sort.Direction.DESC,"commentDate");
-        Pageable pageable = PageRequest.of(0,999,sort);
-        Page<Comment> comments = commentService.findCommentsByPostAndCommentStatus(post,pageable,0);
+        List<Comment> comments = commentService.findCommentsByPostAndCommentStatus(post, CommentStatus.PUBLISHED.getCode());
         model.addAttribute("post", post);
-        model.addAttribute("comments",comments);
+        model.addAttribute("comments", CommentUtil.getComments(comments));
+        model.addAttribute("commentsCount", comments.size());
         postService.updatePostView(post);
         return this.render("post");
     }

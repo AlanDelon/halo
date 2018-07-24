@@ -3,16 +3,14 @@ package cc.ryanc.halo.web.controller.front;
 import cc.ryanc.halo.model.domain.Comment;
 import cc.ryanc.halo.model.domain.Gallery;
 import cc.ryanc.halo.model.domain.Post;
+import cc.ryanc.halo.model.enums.CommentStatus;
 import cc.ryanc.halo.model.enums.PostType;
 import cc.ryanc.halo.service.CommentService;
 import cc.ryanc.halo.service.GalleryService;
 import cc.ryanc.halo.service.PostService;
+import cc.ryanc.halo.utils.CommentUtil;
 import cc.ryanc.halo.web.controller.core.BaseController;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -68,15 +66,13 @@ public class FrontPageController extends BaseController {
     @GetMapping(value = "/p/{postUrl}")
     public String getPage(@PathVariable(value = "postUrl") String postUrl, Model model) {
         Post post = postService.findByPostUrl(postUrl, PostType.POST_TYPE_PAGE.getDesc());
-
-        Sort sort = new Sort(Sort.Direction.DESC,"commentDate");
-        Pageable pageable = PageRequest.of(0,999,sort);
-        Page<Comment> comments = commentService.findCommentsByPostAndCommentStatus(post,pageable,0);
-        if(null==post){
+        if (null == post) {
             return this.renderNotFound();
         }
-        model.addAttribute("comments",comments);
+        List<Comment> comments = commentService.findCommentsByPostAndCommentStatus(post, CommentStatus.PUBLISHED.getCode());
         model.addAttribute("post", post);
+        model.addAttribute("comments", CommentUtil.getComments(comments));
+        model.addAttribute("commentsCount", comments.size());
         postService.updatePostView(post);
         return this.render("page");
     }

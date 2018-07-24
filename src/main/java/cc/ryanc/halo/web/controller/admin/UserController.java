@@ -2,6 +2,7 @@ package cc.ryanc.halo.web.controller.admin;
 
 import cc.ryanc.halo.model.domain.User;
 import cc.ryanc.halo.model.dto.JsonResult;
+import cc.ryanc.halo.model.enums.ResultCode;
 import cc.ryanc.halo.service.UserService;
 import cn.hutool.crypto.SecureUtil;
 import freemarker.template.Configuration;
@@ -53,13 +54,13 @@ public class UserController {
                 configuration.setSharedVariable("user", userService.findUser());
                 session.invalidate();
             } else {
-                return new JsonResult(0,"修改失败！");
+                return new JsonResult(ResultCode.FAIL.getCode(), "修改失败！");
             }
         } catch (Exception e) {
-            log.error("未知错误：{0}", e.getMessage());
-            return new JsonResult(0,"修改失败！");
+            log.error("修改用户资料失败：{}", e.getMessage());
+            return new JsonResult(ResultCode.FAIL.getCode(), "修改失败！");
         }
-        return new JsonResult(1,"修改成功！");
+        return new JsonResult(ResultCode.SUCCESS.getCode(), "修改成功！");
     }
 
     /**
@@ -74,9 +75,9 @@ public class UserController {
     @PostMapping(value = "changePass")
     @ResponseBody
     public JsonResult changePass(@ModelAttribute("beforePass") String beforePass,
-                              @ModelAttribute("newPass") String newPass,
-                              @ModelAttribute("userId") Long userId,
-                              HttpSession session) {
+                                 @ModelAttribute("newPass") String newPass,
+                                 @ModelAttribute("userId") Long userId,
+                                 HttpSession session) {
         try {
             User user = userService.findByUserIdAndUserPass(userId, SecureUtil.md5(beforePass));
             if (null != user) {
@@ -84,12 +85,12 @@ public class UserController {
                 userService.saveByUser(user);
                 session.invalidate();
             } else {
-                return new JsonResult(0,"原密码错误！");
+                return new JsonResult(ResultCode.FAIL.getCode(), "原密码错误！");
             }
         } catch (Exception e) {
-            log.error("修改密码：未知错误，{0}", e.getMessage());
-            return new JsonResult(0,"密码修改失败！");
+            log.error("修改密码失败：{}", e.getMessage());
+            return new JsonResult(ResultCode.FAIL.getCode(), "密码修改失败！");
         }
-        return new JsonResult(1,"修改密码成功！");
+        return new JsonResult(ResultCode.SUCCESS.getCode(), "修改密码成功！");
     }
 }

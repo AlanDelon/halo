@@ -95,6 +95,15 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     Post findPostByPostStatusAndPostUrlAndPostType(Integer status, String postUrl, String postType);
 
     /**
+     * 根据文章编号查询
+     *
+     * @param postId   文章编号
+     * @param postType post or page
+     * @return Post
+     */
+    Post findPostByPostIdAndPostType(Long postId, String postType);
+
+    /**
      * 查询之后文章
      *
      * @param postDate   发布时间
@@ -165,19 +174,21 @@ public interface PostRepository extends JpaRepository<Post, Long> {
      * 根据分类目录查询文章
      *
      * @param category category
+     * @param status   status
      * @param pageable pageable
      * @return Page
      */
-    Page<Post> findPostByCategories(Category category, Pageable pageable);
+    Page<Post> findPostByCategoriesAndPostStatus(Category category, Integer status, Pageable pageable);
 
     /**
      * 根据标签查询文章，分页
      *
      * @param tag      tag
+     * @param status   status
      * @param pageable pageable
      * @return Page
      */
-    Page<Post> findPostsByTags(Tag tag, Pageable pageable);
+    Page<Post> findPostsByTagsAndPostStatus(Tag tag, Integer status, Pageable pageable);
 
     /**
      * 根据标签查询文章
@@ -190,8 +201,8 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     /**
      * 模糊查询文章
      *
-     * @param keyword    关键词
-     * @param pageable   分页信息
+     * @param keyword  关键词
+     * @param pageable 分页信息
      * @return Page
      */
     @Query(value = "select * from halo_post where post_status = 0 and post_type='post' and post_title like '%=:keyword%' or post_content like '%=:keyword%'", nativeQuery = true)
@@ -204,4 +215,21 @@ public interface PostRepository extends JpaRepository<Post, Long> {
      * @return List<Post>
      */
     List<Post> findPostsByPostTypeOrderByPostViewsDesc(String postStatus);
+
+    /**
+     * 获取所有文章阅读量总和
+     *
+     * @return Long
+     */
+    @Query(value = "select sum(post_views) from halo_post", nativeQuery = true)
+    Long getPostViewsSum();
+
+    /**
+     * 根据文章状态查询数量
+     *
+     * @param status   文章状态
+     * @param postType 文章类型
+     * @return 文章数量
+     */
+    Integer countAllByPostStatusAndPostType(Integer status, String postType);
 }

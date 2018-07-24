@@ -7,11 +7,9 @@ import cc.ryanc.halo.model.domain.User;
 import cc.ryanc.halo.model.dto.HaloConst;
 import cc.ryanc.halo.model.dto.JsonResult;
 import cc.ryanc.halo.model.dto.LogsRecord;
-import cc.ryanc.halo.model.enums.PostType;
-import cc.ryanc.halo.service.CommentService;
-import cc.ryanc.halo.service.LogsService;
-import cc.ryanc.halo.service.PostService;
-import cc.ryanc.halo.service.UserService;
+import cc.ryanc.halo.model.enums.ResultCode;
+import cc.ryanc.halo.model.enums.TrueFalse;
+import cc.ryanc.halo.service.*;
 import cc.ryanc.halo.web.controller.core.BaseController;
 import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;
@@ -60,6 +58,9 @@ public class AdminController extends BaseController {
     @Autowired
     private CommentService commentService;
 
+    @Autowired
+    private AttachmentService attachmentService;
+
     /**
      * 请求后台页面
      *
@@ -68,10 +69,7 @@ public class AdminController extends BaseController {
      * @return 模板路径admin/admin_index
      */
     @GetMapping(value = {"", "/index"})
-    public String index(Model model, HttpSession session) {
-        //查询文章条数
-        Integer postCount = postService.findAllPosts(PostType.POST_TYPE_POST.getDesc()).size();
-        model.addAttribute("postCount", postCount);
+    public String index(Model model) {
 
         //查询评论的条数
         Integer commentCount = commentService.findAllComments().size();
@@ -89,7 +87,12 @@ public class AdminController extends BaseController {
         List<Comment> comments = commentService.findCommentsLatest();
         model.addAttribute("comments", comments);
 
-        model.addAttribute("mediaCount", HaloConst.ATTACHMENTS.size());
+        //附件数量
+        model.addAttribute("mediaCount", attachmentService.findAllAttachments().size());
+
+        //文章阅读总数
+        Long postViewsSum = postService.getPostViews();
+        model.addAttribute("postViewsSum", postViewsSum);
         return "admin/admin_index";
     }
 
@@ -115,7 +118,7 @@ public class AdminController extends BaseController {
      * @param loginName 登录名：邮箱／用户名
      * @param loginPwd  loginPwd 密码
      * @param session   session session
-     * @return String 登录状态
+     * @return JsonResult JsonResult
      */
     @PostMapping(value = "/getLogin")
     @ResponseBody
@@ -126,12 +129,12 @@ public class AdminController extends BaseController {
         User aUser = userService.findUser();
         //首先判断是否已经被禁用已经是否已经过了10分钟
         Date loginLast = DateUtil.date();
-        if(null!=aUser.getLoginLast()){
+        if (null != aUser.getLoginLast()) {
             loginLast = aUser.getLoginLast();
         }
         Long between = DateUtil.between(loginLast, DateUtil.date(), DateUnit.MINUTE);
-        if (StringUtils.equals(aUser.getLoginEnable(), "false") && (between < 10)) {
-            return new JsonResult(0, "已禁止登录，请10分钟后再试");
+        if (StringUtils.equals(aUser.getLoginEnable(), TrueFalse.FALSE.getDesc()) && (between < 10)) {
+            return new JsonResult(ResultCode.FAIL.getCode(), "已禁止登录，请10分钟后再试");
         }
         //验证用户名和密码
         User user = null;
@@ -147,13 +150,14 @@ public class AdminController extends BaseController {
             //重置用户的登录状态为正常
             userService.updateUserNormal();
             logsService.saveByLogs(new Logs(LogsRecord.LOGIN, LogsRecord.LOGIN_SUCCESS, ServletUtil.getClientIP(request), DateUtil.date()));
-            return new JsonResult(1, "登录成功！");
+            log.info("用户[{}]登录成功。", aUser.getUserDisplayName());
+            return new JsonResult(ResultCode.SUCCESS.getCode(), "登录成功！");
         } else {
             //更新失败次数
             Integer errorCount = userService.updateUserLoginError();
             //超过五次禁用账户
             if (errorCount >= 5) {
-                userService.updateUserLoginEnable("false");
+                userService.updateUserLoginEnable(TrueFalse.FALSE.getDesc());
             }
             logsService.saveByLogs(
                     new Logs(
@@ -163,7 +167,7 @@ public class AdminController extends BaseController {
                             DateUtil.date()
                     )
             );
-            return new JsonResult(0, "登录失败，你还有" + (5 - errorCount) + "次机会。");
+            return new JsonResult(ResultCode.FAIL.getCode(), "登录失败，你还有" + (5 - errorCount) + "次机会。");
         }
     }
 
@@ -178,7 +182,7 @@ public class AdminController extends BaseController {
         User user = (User) session.getAttribute(HaloConst.USER_SESSION_KEY);
         logsService.saveByLogs(new Logs(LogsRecord.LOGOUT, user.getUserName(), ServletUtil.getClientIP(request), DateUtil.date()));
         session.invalidate();
-        log.info("用户[" + user.getUserName() + "]退出登录");
+        log.info("用户[{}]退出登录", user.getUserName());
         return "redirect:/admin/login";
     }
 
@@ -211,7 +215,7 @@ public class AdminController extends BaseController {
         try {
             logsService.removeAllLogs();
         } catch (Exception e) {
-            log.error("未知错误：" + e.getMessage());
+            log.error("清除日志失败：{}" + e.getMessage());
         }
         return "redirect:/admin";
     }

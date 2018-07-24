@@ -127,7 +127,7 @@
                 <#if options.widget_postcount?default("true")=="true">
                 <div class="col-lg-3 col-xs-6" id="widgetPostCountBody">
                     <div class="small-box bg-aqua">
-                        <div class="inner"><h3>${postCount?default(0)}</h3><p>文章</p></div>
+                        <div class="inner"><h3><@articleTag method="postsCount">${postsCount?default(0)}</@articleTag></h3><p>文章</p></div>
                         <div class="icon"><i class="ion ion-bag"></i></div>
                         <a data-pjax="true" href="/admin/posts" class="small-box-footer">查看所有 <i class="fa fa-arrow-circle-right"></i></a>
                     </div>
@@ -156,7 +156,7 @@
                     <div class="small-box bg-red">
                         <div class="inner"><h3 id="blogStart">1</h3><p>成立天数</p></div>
                         <div class="icon"><i class="ion ion-pie-graph"></i></div>
-                        <a href="#" class="small-box-footer">${options.blog_start?default('0000-00-00')} <i class="fa fa-star"></i></a>
+                        <a href="#" class="small-box-footer" data-toggle="modal" data-target="#blogInfo">${options.blog_start?default('0000-00-00')} <i class="fa fa-star"></i></a>
                     </div>
                 </div>
                 </#if>
@@ -250,13 +250,13 @@
                                             <td>
                                                 <#switch comment.commentStatus>
                                                     <#case 0>
-                                                    <a href="/admin/comments">${comment.commentContent}</a>
+                                                    ${comment.commentContent}
                                                     <#break>
                                                     <#case 1>
-                                                    <a href="/admin/comments?status=1">${comment.commentContent}</a>
+                                                    ${comment.commentContent}
                                                     <#break>
                                                     <#case 2>
-                                                    <a href="/admin/comments?status=2">${comment.commentContent}</a>
+                                                    ${comment.commentContent}
                                                     <#break>
                                                 </#switch>
                                             </td>
@@ -335,8 +335,29 @@
                 </#if>
             </div>
         </section>
-        <script src="/static/plugins/layer/layer.js"></script>
-        <script src="/static/js/app.js"></script>
+        <div class="modal fade" id="blogInfo" tabindex="-1" role="dialog">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title" id="myModalLabel">博客数据</h4>
+                    </div>
+                    <div class="modal-body">
+                        <p>「${options.blog_title?if_exists}」已经运行了<span id="blogStartDay"></span>天了。</p>
+                        <p>在此期间：</p>
+                        <p>累计发表了<@articleTag method="postsCount">${postsCount?default(0)}</@articleTag>篇文章。</p>
+                        <p>累计创建了<@commonTag method="tags">${tags?size}</@commonTag>个标签。</p>
+                        <p>累计获得了${commentCount}条评论。</p>
+                        <p>累计添加了<@commonTag method="links">${links?size}</@commonTag>个友链。</p>
+                        <p>文章总访问${postViewsSum?default(0L)}次。</p>
+                        <p>加油！不要因为走的太远，而忘了当初为什么出发。</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" data-dismiss="modal">确定</button>
+                    </div>
+                </div>
+            </div>
+        </div>
         <script type="application/javascript">
             $(document).ready(function () {
                 var dateBegin = new Date("${options.blog_start?default('0000-00-00')}");
@@ -344,6 +365,7 @@
                 var parseDate = dateEnd.getTime() - dateBegin.getTime();
                 var days = Math.floor(parseDate/(24*3600*1000));
                 $('#blogStart').html(days+1);
+                $('#blogStartDay').html(days+1);
             });
             function openAllLogs() {
                 layer.open({

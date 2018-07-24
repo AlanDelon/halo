@@ -4,12 +4,15 @@ import cc.ryanc.halo.model.domain.Comment;
 import cc.ryanc.halo.model.domain.Post;
 import cc.ryanc.halo.model.dto.HaloConst;
 import cc.ryanc.halo.model.dto.JsonResult;
-import cc.ryanc.halo.model.enums.PostType;
+import cc.ryanc.halo.model.enums.*;
 import cc.ryanc.halo.service.CommentService;
 import cc.ryanc.halo.service.MailService;
 import cc.ryanc.halo.service.PostService;
 import cc.ryanc.halo.service.UserService;
+import cc.ryanc.halo.utils.CommentUtil;
+import cc.ryanc.halo.utils.OwoUtil;
 import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.lang.Validator;
 import cn.hutool.core.util.URLUtil;
 import cn.hutool.extra.servlet.ServletUtil;
 import cn.hutool.http.HtmlUtil;
@@ -28,8 +31,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * @author : RYAN0UP
@@ -62,12 +63,9 @@ public class FrontCommentController {
     public List<Comment> getComment(@PathVariable Long postId) {
         Optional<Post> post = postService.findByPostId(postId);
         Sort sort = new Sort(Sort.Direction.DESC, "commentDate");
-        Pageable pageable = PageRequest.of(0, 10, sort);
-        List<Comment> comments = commentService.findCommentsByPostAndCommentStatus(post.get(), pageable, 2).getContent();
-        if (null == comments) {
-            return null;
-        }
-        return comments;
+        Pageable pageable = PageRequest.of(0, 999, sort);
+        List<Comment> comments = commentService.findCommentsByPostAndCommentStatus(post.get(), pageable, CommentStatus.PUBLISHED.getCode()).getContent();
+        return CommentUtil.getComments(comments);
     }
 
     /**
@@ -83,7 +81,7 @@ public class FrontCommentController {
                                      @RequestParam(value = "post") Post post){
         Sort sort = new Sort(Sort.Direction.DESC,"commentDate");
         Pageable pageable = PageRequest.of(page-1,10,sort);
-        List<Comment> comments = commentService.findCommentsByPostAndCommentStatus(post,pageable,2).getContent();
+        List<Comment> comments = commentService.findCommentsByPostAndCommentStatus(post,pageable,CommentStatus.PUBLISHED.getCode()).getContent();
         return comments;
     }
 
@@ -100,6 +98,12 @@ public class FrontCommentController {
     public JsonResult newComment(@ModelAttribute("comment") Comment comment,
                               @ModelAttribute("post") Post post,
                               HttpServletRequest request) {
+        if (StringUtils.equals(StringUtils.trim(comment.getCommentAuthor()), "")) {
+            return new JsonResult(ResultCode.FAIL.getCode(), "请正确输入昵称！");
+        }
+        if (StringUtils.equals(StringUtils.trim(comment.getCommentContent()), "")) {
+            return new JsonResult(ResultCode.FAIL.getCode(), "请正确输入评论内容！");
+        }
         try{
             Comment lastComment = null;
             post = postService.findByPostId(post.getPostId()).get();
@@ -111,24 +115,25 @@ public class FrontCommentController {
             comment.setCommentAuthor(HtmlUtil.encode(comment.getCommentAuthor()));
             if(comment.getCommentParent()>0){
                 lastComment = commentService.findCommentById(comment.getCommentParent()).get();
-                String lastContent = " //<a href='#comment-id-"+lastComment.getCommentId()+"'>@"+lastComment.getCommentAuthor()+"</a>:"+lastComment.getCommentContent();
-                comment.setCommentContent(StringUtils.substringAfter(HtmlUtil.encode(comment.getCommentContent()),":")+lastContent);
+                String lastContent = "<a href='#comment-id-" + lastComment.getCommentId() + "'>@" + lastComment.getCommentAuthor() + "</a>";
+                comment.setCommentContent(lastContent + StringUtils.substringAfter(OwoUtil.markToImg(HtmlUtil.encode(comment.getCommentContent())), ":"));
             }else{
                 //将评论内容的字符专为安全字符
-                comment.setCommentContent(HtmlUtil.encode(comment.getCommentContent()));
+                comment.setCommentContent(OwoUtil.markToImg(HtmlUtil.encode(comment.getCommentContent())));
             }
             if(StringUtils.isNotEmpty(comment.getCommentAuthorUrl())){
                 comment.setCommentAuthorUrl(URLUtil.formatUrl(comment.getCommentAuthorUrl()));
             }
             commentService.saveByComment(comment);
             if(comment.getCommentParent()>0){
-                //new EmailToParent(comment,lastComment,post).start();
+                new EmailToParent(comment,lastComment,post).start();
+                new EmailToAdmin(comment, post).start();
             }else{
                 new EmailToAdmin(comment,post).start();
             }
-            return new JsonResult(1,"你的评论已经提交，待博主审核之后可显示。");
+            return new JsonResult(ResultCode.SUCCESS.getCode(),"你的评论已经提交，待博主审核之后可显示。");
         }catch (Exception e){
-            return new JsonResult(0,"评论失败！");
+            return new JsonResult(ResultCode.FAIL.getCode(),"评论失败！");
         }
     }
 
@@ -138,28 +143,29 @@ public class FrontCommentController {
     class EmailToAdmin extends Thread{
         private Comment comment;
         private Post post;
-        public EmailToAdmin(Comment comment,Post post){
+
+        private EmailToAdmin(Comment comment, Post post) {
             this.comment = comment;
             this.post = post;
         }
         @Override
         public void run(){
-            if (StringUtils.equals(HaloConst.OPTIONS.get("smtp_email_enable"), "true") && StringUtils.equals(HaloConst.OPTIONS.get("new_comment_notice"), "true")) {
+            if (StringUtils.equals(HaloConst.OPTIONS.get(BlogProperties.SMTP_EMAIL_ENABLE.getProp()), TrueFalse.TRUE.getDesc()) && StringUtils.equals(HaloConst.OPTIONS.get(BlogProperties.NEW_COMMENT_NOTICE.getProp()), TrueFalse.TRUE.getDesc())) {
                 try {
                     //发送邮件到博主
                     Map<String, Object> map = new HashMap<>();
                     map.put("author", userService.findUser().getUserDisplayName());
                     map.put("pageName", post.getPostTitle());
                     if (StringUtils.equals(post.getPostType(), PostType.POST_TYPE_POST.getDesc())) {
-                        map.put("pageUrl", HaloConst.OPTIONS.get("blog_url") + "/archives/" + post.getPostUrl() + "#comment-id-" + comment.getCommentId());
+                        map.put("pageUrl", HaloConst.OPTIONS.get(BlogProperties.BLOG_URL.getProp()) + "/archives/" + post.getPostUrl() + "#comment-id-" + comment.getCommentId());
                     } else {
-                        map.put("pageUrl", HaloConst.OPTIONS.get("blog_url") + "/p/" + post.getPostUrl() + "#comment-id-" + comment.getCommentId());
+                        map.put("pageUrl", HaloConst.OPTIONS.get(BlogProperties.BLOG_URL.getProp()) + "/p/" + post.getPostUrl() + "#comment-id-" + comment.getCommentId());
                     }
                     map.put("visitor", comment.getCommentAuthor());
                     map.put("commentContent", comment.getCommentContent());
                     mailService.sendTemplateMail(userService.findUser().getUserEmail(), "有新的评论", map, "common/mail/mail_admin.ftl");
                 } catch (Exception e) {
-                    log.error("邮件服务器未配置：", e.getMessage());
+                    log.error("邮件服务器未配置：{}", e.getMessage());
                 }
             }
         }
@@ -172,35 +178,33 @@ public class FrontCommentController {
         private Comment comment;
         private Comment lastComment;
         private Post post;
-        public EmailToParent(Comment comment,Comment lastComment,Post post){
+
+        private EmailToParent(Comment comment, Comment lastComment, Post post) {
             this.comment = comment;
             this.lastComment = lastComment;
             this.post = post;
         }
 
-        Pattern patternEmail = Pattern.compile("\\w[-\\w.+]*@([A-Za-z0-9][-A-Za-z0-9]+\\.)+[A-Za-z]{2,14}");
-        Matcher matcher = patternEmail.matcher(lastComment.getCommentAuthorEmail());
-
         @Override
         public void run() {
             //发送通知给对方
-            if(StringUtils.equals(HaloConst.OPTIONS.get("smtp_email_enable"),"true") && StringUtils.equals(HaloConst.OPTIONS.get("comment_reply_notice"),"true")) {
-                if(matcher.find()){
+            if (StringUtils.equals(HaloConst.OPTIONS.get(BlogProperties.SMTP_EMAIL_ENABLE.getProp()), TrueFalse.TRUE.getDesc()) && StringUtils.equals(HaloConst.OPTIONS.get(BlogProperties.NEW_COMMENT_NOTICE.getProp()), TrueFalse.TRUE.getDesc())) {
+                if(Validator.isEmail(lastComment.getCommentAuthorEmail())){
                     Map<String, Object> map = new HashMap<>();
-                    map.put("blogTitle",HaloConst.OPTIONS.get("blog_title"));
+                    map.put("blogTitle",HaloConst.OPTIONS.get(BlogProperties.BLOG_TITLE.getProp()));
                     map.put("commentAuthor",lastComment.getCommentAuthor());
                     map.put("pageName",lastComment.getPost().getPostTitle());
                     if (StringUtils.equals(post.getPostType(), PostType.POST_TYPE_POST.getDesc())) {
-                        map.put("pageUrl", HaloConst.OPTIONS.get("blog_url") + "/archives/" + post.getPostUrl() + "#comment-id-" + comment.getCommentId());
+                        map.put("pageUrl", HaloConst.OPTIONS.get(BlogProperties.BLOG_URL.getProp()) + "/archives/" + post.getPostUrl() + "#comment-id-" + comment.getCommentId());
                     } else {
-                        map.put("pageUrl", HaloConst.OPTIONS.get("blog_url") + "/p/" + post.getPostUrl() + "#comment-id-" + comment.getCommentId());
+                        map.put("pageUrl", HaloConst.OPTIONS.get(BlogProperties.BLOG_URL.getProp()) + "/p/" + post.getPostUrl() + "#comment-id-" + comment.getCommentId());
                     }
                     map.put("commentContent",lastComment.getCommentContent());
                     map.put("replyAuthor",comment.getCommentAuthor());
                     map.put("replyContent",comment.getCommentContent());
-                    map.put("blogUrl",HaloConst.OPTIONS.get("blog_url"));
+                    map.put("blogUrl",HaloConst.OPTIONS.get(BlogProperties.BLOG_URL.getProp()));
                     mailService.sendTemplateMail(
-                            lastComment.getCommentAuthorEmail(),"您在"+HaloConst.OPTIONS.get("blog_title")+"的评论有了新回复",map,"common/mail/mail_reply.ftl");
+                            lastComment.getCommentAuthorEmail(),"您在"+HaloConst.OPTIONS.get(BlogProperties.BLOG_TITLE.getProp())+"的评论有了新回复",map,"common/mail/mail_reply.ftl");
                 }
             }
         }

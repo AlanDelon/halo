@@ -94,6 +94,7 @@ public interface PostService {
 
     /**
      * 根据文章状态查询 分页，首页分页
+     *
      * @param pageable pageable
      * @return Page
      */
@@ -115,6 +116,15 @@ public interface PostService {
      * @return Post
      */
     Optional<Post> findByPostId(Long postId);
+
+    /**
+     * 根据编号和类型查询文章
+     *
+     * @param postId   postId
+     * @param postType postType
+     * @return Post
+     */
+    Post findByPostId(Long postId, String postType);
 
     /**
      * 根据文章路径查询
@@ -205,7 +215,7 @@ public interface PostService {
      * @param pageable pageable
      * @return Page
      */
-    Page<Post> findPostByCategories(Category category,Pageable pageable);
+    Page<Post> findPostByCategories(Category category, Pageable pageable);
 
     /**
      * 根据标签查询文章
@@ -219,11 +229,11 @@ public interface PostService {
     /**
      * 搜索文章
      *
-     * @param keyword 关键词
+     * @param keyword  关键词
      * @param pageable 分页信息
      * @return Page
      */
-    Page<Post> searchByKeywords(String keyword,Pageable pageable);
+    Page<Post> searchByKeywords(String keyword, Pageable pageable);
 
     /**
      * 热门文章
@@ -239,6 +249,21 @@ public interface PostService {
      * @return List
      */
     List<Post> relatedPosts(Post post);
+
+    /**
+     * 获取所有文章的阅读量
+     *
+     * @return Long
+     */
+    Long getPostViews();
+
+    /**
+     * 根据文章状态查询数量
+     *
+     * @param status 文章状态
+     * @return 文章数量
+     */
+    Integer getCountByStatus(Integer status);
 
     /**
      * 生成rss

@@ -30,10 +30,12 @@ import java.util.Optional;
 @Service
 public class PostServiceImpl implements PostService {
 
+    private static final String POSTS_CACHE_NAME = "posts";
+
+    private static final String COMMENTS_CACHE_NAME = "comments";
+
     @Autowired
     private PostRepository postRepository;
-
-    private static final String POSTS_CACHE_NAME = "posts";
 
     /**
      * 保存文章
@@ -42,7 +44,7 @@ public class PostServiceImpl implements PostService {
      * @return Post
      */
     @Override
-    @CacheEvict(value = POSTS_CACHE_NAME, allEntries = true, beforeInvocation = true)
+    @CacheEvict(value = {POSTS_CACHE_NAME, COMMENTS_CACHE_NAME}, allEntries = true, beforeInvocation = true)
     public Post saveByPost(Post post) {
         return postRepository.save(post);
     }
@@ -54,7 +56,7 @@ public class PostServiceImpl implements PostService {
      * @return Post
      */
     @Override
-    @CacheEvict(value = POSTS_CACHE_NAME, allEntries = true, beforeInvocation = true)
+    @CacheEvict(value = {POSTS_CACHE_NAME, COMMENTS_CACHE_NAME}, allEntries = true, beforeInvocation = true)
     public Post removeByPostId(Long postId) {
         Optional<Post> post = this.findByPostId(postId);
         postRepository.delete(post.get());
@@ -83,7 +85,7 @@ public class PostServiceImpl implements PostService {
      */
     @Override
     public void updatePostView(Post post) {
-        post.setPostViews(post.getPostViews()+1);
+        post.setPostViews(post.getPostViews() + 1);
         postRepository.save(post);
     }
 
@@ -99,7 +101,7 @@ public class PostServiceImpl implements PostService {
         for (Post post : posts) {
             String text = HtmlUtil.cleanHtmlTag(post.getPostContent());
             if (text.length() > postSummary) {
-                post.setPostSummary(text.substring(0,postSummary));
+                post.setPostSummary(text.substring(0, postSummary));
             } else {
                 post.setPostSummary(text);
             }
@@ -165,7 +167,7 @@ public class PostServiceImpl implements PostService {
     @Override
     @Cacheable(value = POSTS_CACHE_NAME, key = "'posts_page_'+#pageable.pageNumber")
     public Page<Post> findPostByStatus(Pageable pageable) {
-        return postRepository.findPostsByPostStatusAndPostType(PostStatus.PUBLISHED.getCode(),PostType.POST_TYPE_POST.getDesc(),pageable);
+        return postRepository.findPostsByPostStatusAndPostType(PostStatus.PUBLISHED.getCode(), PostType.POST_TYPE_POST.getDesc(), pageable);
     }
 
     /**
@@ -176,6 +178,7 @@ public class PostServiceImpl implements PostService {
      * @return List
      */
     @Override
+    @Cacheable(value = POSTS_CACHE_NAME, key = "'posts_status_type_'+#status+'_'+#postType")
     public List<Post> findPostByStatus(Integer status, String postType) {
         return postRepository.findPostsByPostStatusAndPostType(status, postType);
     }
@@ -192,6 +195,17 @@ public class PostServiceImpl implements PostService {
     }
 
     /**
+     * 根据编号和类型查询文章
+     *
+     * @param postId postId
+     * @return Post
+     */
+    @Override
+    public Post findByPostId(Long postId, String postType) {
+        return postRepository.findPostByPostIdAndPostType(postId, postType);
+    }
+
+    /**
      * 根据文章路径查询
      *
      * @param postUrl  路径
@@ -199,7 +213,7 @@ public class PostServiceImpl implements PostService {
      * @return Post
      */
     @Override
-    @Cacheable(value = POSTS_CACHE_NAME,key = "'posts_posturl_'+#postUrl+'_'+#postType")
+    @Cacheable(value = POSTS_CACHE_NAME, key = "'posts_posturl_'+#postUrl+'_'+#postType")
     public Post findByPostUrl(String postUrl, String postType) {
         return postRepository.findPostByPostUrlAndPostType(postUrl, postType);
     }
@@ -335,37 +349,40 @@ public class PostServiceImpl implements PostService {
      * 根据分类目录查询文章
      *
      * @param category category
+     * @param status   status
      * @param pageable pageable
      * @return Page
      */
     @Override
+    @CachePut(value = POSTS_CACHE_NAME, key = "'posts_category_'+#category.cateId+'_'+#pageable.pageNumber")
     public Page<Post> findPostByCategories(Category category, Pageable pageable) {
-        return postRepository.findPostByCategories(category,pageable);
+        return postRepository.findPostByCategoriesAndPostStatus(category, PostStatus.PUBLISHED.getCode(), pageable);
     }
 
     /**
-     * 根据标签查询文章
+     * 根据标签查询文章，分页
      *
      * @param tag      tag
+     * @param status   status
      * @param pageable pageable
      * @return Page
      */
     @Override
     @CachePut(value = POSTS_CACHE_NAME, key = "'posts_tag_'+#tag.tagId+'_'+#pageable.pageNumber")
     public Page<Post> findPostsByTags(Tag tag, Pageable pageable) {
-        return postRepository.findPostsByTags(tag, pageable);
+        return postRepository.findPostsByTagsAndPostStatus(tag, PostStatus.PUBLISHED.getCode(), pageable);
     }
 
     /**
      * 搜索文章
      *
-     * @param keyword 关键词
+     * @param keyword  关键词
      * @param pageable 分页信息
      * @return Page
      */
     @Override
-    public Page<Post> searchByKeywords(String keyword,Pageable pageable) {
-        return postRepository.findPostByPostTitleLikeOrPostContentLikeAndPostTypeAndPostStatus(keyword,pageable);
+    public Page<Post> searchByKeywords(String keyword, Pageable pageable) {
+        return postRepository.findPostByPostTitleLikeOrPostContentLikeAndPostTypeAndPostStatus(keyword, pageable);
     }
 
     /**
@@ -404,6 +421,27 @@ public class PostServiceImpl implements PostService {
             }
         }
         return allPosts;
+    }
+
+    /**
+     * 获取所有文章的阅读量
+     *
+     * @return Long
+     */
+    @Override
+    public Long getPostViews() {
+        return postRepository.getPostViewsSum();
+    }
+
+    /**
+     * 根据文章状态查询数量
+     *
+     * @param status 文章状态
+     * @return 文章数量
+     */
+    @Override
+    public Integer getCountByStatus(Integer status) {
+        return postRepository.countAllByPostStatusAndPostType(status, PostType.POST_TYPE_POST.getDesc());
     }
 
     /**

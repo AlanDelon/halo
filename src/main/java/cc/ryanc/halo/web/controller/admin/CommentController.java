@@ -4,16 +4,20 @@ import cc.ryanc.halo.model.domain.Comment;
 import cc.ryanc.halo.model.domain.Post;
 import cc.ryanc.halo.model.domain.User;
 import cc.ryanc.halo.model.dto.HaloConst;
+import cc.ryanc.halo.model.enums.BlogProperties;
+import cc.ryanc.halo.model.enums.CommentStatus;
 import cc.ryanc.halo.model.enums.PostType;
+import cc.ryanc.halo.model.enums.TrueFalse;
 import cc.ryanc.halo.service.CommentService;
 import cc.ryanc.halo.service.MailService;
 import cc.ryanc.halo.service.PostService;
-import cc.ryanc.halo.service.UserService;
+import cc.ryanc.halo.utils.OwoUtil;
 import cc.ryanc.halo.web.controller.core.BaseController;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.lang.Validator;
 import cn.hutool.crypto.SecureUtil;
 import cn.hutool.extra.servlet.ServletUtil;
+import cn.hutool.http.HtmlUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,9 +54,6 @@ public class CommentController extends BaseController {
     private MailService mailService;
 
     @Autowired
-    private UserService userService;
-
-    @Autowired
     private PostService postService;
 
     /**
@@ -73,9 +74,9 @@ public class CommentController extends BaseController {
         Pageable pageable = PageRequest.of(page, size, sort);
         Page<Comment> comments = commentService.findAllComments(status, pageable);
         model.addAttribute("comments", comments);
-        model.addAttribute("publicCount", commentService.findAllComments(0, pageable).getTotalElements());
-        model.addAttribute("checkCount", commentService.findAllComments(1, pageable).getTotalElements());
-        model.addAttribute("trashCount", commentService.findAllComments(2, pageable).getTotalElements());
+        model.addAttribute("publicCount", commentService.getCountByStatus(CommentStatus.PUBLISHED.getCode()));
+        model.addAttribute("checkCount", commentService.getCountByStatus(CommentStatus.CHECKING.getCode()));
+        model.addAttribute("trashCount", commentService.getCountByStatus(CommentStatus.RECYCLE.getCode()));
         model.addAttribute("status", status);
         return "admin/admin_comment";
     }
@@ -89,13 +90,14 @@ public class CommentController extends BaseController {
      */
     @GetMapping(value = "/throw")
     public String moveToTrash(@PathParam("commentId") Long commentId,
-                              @PathParam("status") String status) {
+                              @PathParam("status") String status,
+                              @RequestParam(value = "page", defaultValue = "0") Integer page) {
         try {
-            commentService.updateCommentStatus(commentId, 2);
+            commentService.updateCommentStatus(commentId, CommentStatus.RECYCLE.getCode());
         } catch (Exception e) {
-            log.error("未知错误：{0}", e.getMessage());
+            log.error("删除评论失败：{}", e.getMessage());
         }
-        return "redirect:/admin/comments?status=" + status;
+        return "redirect:/admin/comments?status=" + status + "&page=" + page;
     }
 
     /**
@@ -110,33 +112,12 @@ public class CommentController extends BaseController {
     public String moveToPublish(@PathParam("commentId") Long commentId,
                                 @PathParam("status") Integer status,
                                 HttpSession session) {
-        Comment comment = commentService.updateCommentStatus(commentId, 0);
+        Comment comment = commentService.updateCommentStatus(commentId, CommentStatus.PUBLISHED.getCode());
         Post post = comment.getPost();
         User user = (User) session.getAttribute(HaloConst.USER_SESSION_KEY);
 
         //判断是否启用邮件服务
-        if (StringUtils.equals(HaloConst.OPTIONS.get("smtp_email_enable"), "true") && StringUtils.equals(HaloConst.OPTIONS.get("comment_pass_notice"), "true")) {
-            try {
-                if (status == 1 && Validator.isEmail(comment.getCommentAuthorEmail())) {
-                    Map<String, Object> map = new HashMap<>();
-                    if (StringUtils.equals(post.getPostType(), PostType.POST_TYPE_POST.getDesc())) {
-                        map.put("pageUrl", HaloConst.OPTIONS.get("blog_url") + "/archives/" + post.getPostUrl() + "#comment-id-" + comment.getCommentId());
-                    } else {
-                        map.put("pageUrl", HaloConst.OPTIONS.get("blog_url") + "/p/" + post.getPostUrl() + "#comment-id-" + comment.getCommentId());
-                    }
-                    map.put("pageName", post.getPostTitle());
-                    map.put("commentContent", comment.getCommentContent());
-                    map.put("blogUrl", HaloConst.OPTIONS.get("blog_url"));
-                    map.put("blogTitle", HaloConst.OPTIONS.get("blog_title"));
-                    map.put("author", user.getUserDisplayName());
-                    mailService.sendTemplateMail(
-                            comment.getCommentAuthorEmail(),
-                            "您在" + HaloConst.OPTIONS.get("blog_title") + "的评论已审核通过！", map, "common/mail/mail_passed.ftl");
-                }
-            } catch (Exception e) {
-                log.error("邮件服务器未配置：", e.getMessage());
-            }
-        }
+        new NoticeToAuthor(comment, post, user, status).start();
         return "redirect:/admin/comments?status=" + status;
     }
 
@@ -145,18 +126,19 @@ public class CommentController extends BaseController {
      *
      * @param commentId commentId 评论编号
      * @param status    status 评论状态
-     * @param session   session session
+     * @param page      当前页码
      * @return string 重定向到/admin/comments
      */
     @GetMapping("/remove")
     public String moveToAway(@PathParam("commentId") Long commentId,
-                             @PathParam("status") Integer status) {
+                             @PathParam("status") Integer status,
+                             @RequestParam(value = "page", defaultValue = "0") Integer page) {
         try {
             commentService.removeByCommentId(commentId);
         } catch (Exception e) {
-            log.error("删除评论失败：", e.getMessage());
+            log.error("删除评论失败：{}", e.getMessage());
         }
-        return "redirect:/admin/comments?status=" + status;
+        return "redirect:/admin/comments?status=" + status + "&page=" + page;
     }
 
 
@@ -184,7 +166,7 @@ public class CommentController extends BaseController {
             Comment lastComment = commentService.findCommentById(commentId).get();
 
             //修改被回复的评论的状态
-            lastComment.setCommentStatus(0);
+            lastComment.setCommentStatus(CommentStatus.PUBLISHED.getCode());
             commentService.saveByComment(lastComment);
 
             //保存评论
@@ -192,41 +174,110 @@ public class CommentController extends BaseController {
             comment.setPost(post);
             comment.setCommentAuthor(user.getUserDisplayName());
             comment.setCommentAuthorEmail(user.getUserEmail());
-            comment.setCommentAuthorUrl(HaloConst.OPTIONS.get("blog_url"));
+            comment.setCommentAuthorUrl(HaloConst.OPTIONS.get(BlogProperties.BLOG_URL.getProp()));
             comment.setCommentAuthorIp(ServletUtil.getClientIP(request));
             comment.setCommentAuthorAvatarMd5(SecureUtil.md5(user.getUserEmail()));
             comment.setCommentDate(DateUtil.date());
-            String lastContent = " //<a href='#comment-id-" + lastComment.getCommentId() + "'>@" + lastComment.getCommentAuthor() + "</a>:" + lastComment.getCommentContent();
-            comment.setCommentContent(commentContent + lastContent);
+            String lastContent = "<a href='#comment-id-" + lastComment.getCommentId() + "'>@" + lastComment.getCommentAuthor() + "</a> ";
+            comment.setCommentContent(lastContent + OwoUtil.markToImg(HtmlUtil.encode(commentContent)));
             comment.setCommentAgent(userAgent);
             comment.setCommentParent(commentId);
-            comment.setCommentStatus(0);
+            comment.setCommentStatus(CommentStatus.PUBLISHED.getCode());
             comment.setIsAdmin(1);
             commentService.saveByComment(comment);
 
             //邮件通知
-            if (StringUtils.equals(HaloConst.OPTIONS.get("smtp_email_enable"), "true") && StringUtils.equals(HaloConst.OPTIONS.get("comment_reply_notice"), "true")) {
+            new EmailToAuthor(comment, lastComment, post, user, commentContent).start();
+        } catch (Exception e) {
+            log.error("回复评论失败：{}", e.getMessage());
+        }
+        return "redirect:/admin/comments";
+    }
+
+    /**
+     * 异步发送邮件回复给评论者
+     */
+    class EmailToAuthor extends Thread {
+
+        private Comment comment;
+        private Comment lastComment;
+        private Post post;
+        private User user;
+        private String commentContent;
+
+        private EmailToAuthor(Comment comment, Comment lastComment, Post post, User user, String commentContent) {
+            this.comment = comment;
+            this.lastComment = lastComment;
+            this.post = post;
+            this.user = user;
+            this.commentContent = commentContent;
+        }
+
+        @Override
+        public void run() {
+            if (StringUtils.equals(HaloConst.OPTIONS.get(BlogProperties.SMTP_EMAIL_ENABLE.getProp()), TrueFalse.TRUE.getDesc()) && StringUtils.equals(HaloConst.OPTIONS.get(BlogProperties.COMMENT_REPLY_NOTICE.getProp()), TrueFalse.TRUE.getDesc())) {
                 if (Validator.isEmail(lastComment.getCommentAuthorEmail())) {
                     Map<String, Object> map = new HashMap<>();
-                    map.put("blogTitle", HaloConst.OPTIONS.get("blog_title"));
+                    map.put("blogTitle", HaloConst.OPTIONS.get(BlogProperties.BLOG_TITLE.getProp()));
                     map.put("commentAuthor", lastComment.getCommentAuthor());
                     map.put("pageName", lastComment.getPost().getPostTitle());
                     if (StringUtils.equals(post.getPostType(), PostType.POST_TYPE_POST.getDesc())) {
-                        map.put("pageUrl", HaloConst.OPTIONS.get("blog_url") + "/archives/" + post.getPostUrl() + "#comment-id-" + comment.getCommentId());
+                        map.put("pageUrl", HaloConst.OPTIONS.get(BlogProperties.BLOG_URL.getProp()) + "/archives/" + post.getPostUrl() + "#comment-id-" + comment.getCommentId());
                     } else {
-                        map.put("pageUrl", HaloConst.OPTIONS.get("blog_url") + "/p/" + post.getPostUrl() + "#comment-id-" + comment.getCommentId());
+                        map.put("pageUrl", HaloConst.OPTIONS.get(BlogProperties.BLOG_URL.getProp()) + "/p/" + post.getPostUrl() + "#comment-id-" + comment.getCommentId());
                     }
                     map.put("commentContent", lastComment.getCommentContent());
                     map.put("replyAuthor", user.getUserDisplayName());
                     map.put("replyContent", commentContent);
-                    map.put("blogUrl", HaloConst.OPTIONS.get("blog_url"));
+                    map.put("blogUrl", HaloConst.OPTIONS.get(BlogProperties.BLOG_URL.getProp()));
                     mailService.sendTemplateMail(
-                            lastComment.getCommentAuthorEmail(), "您在" + HaloConst.OPTIONS.get("blog_title") + "的评论有了新回复", map, "common/mail/mail_reply.ftl");
+                            lastComment.getCommentAuthorEmail(), "您在" + HaloConst.OPTIONS.get(BlogProperties.BLOG_URL.getProp()) + "的评论有了新回复", map, "common/mail/mail_reply.ftl");
                 }
             }
-        } catch (Exception e) {
-            log.error("回复评论失败！{0}", e.getMessage());
         }
-        return "redirect:/admin/comments";
+    }
+
+    /**
+     * 异步通知评论者审核通过
+     */
+    class NoticeToAuthor extends Thread {
+
+        private Comment comment;
+        private Post post;
+        private User user;
+        private Integer status;
+
+        private NoticeToAuthor(Comment comment, Post post, User user, Integer status) {
+            this.comment = comment;
+            this.post = post;
+            this.user = user;
+            this.status = status;
+        }
+
+        @Override
+        public void run() {
+            if (StringUtils.equals(HaloConst.OPTIONS.get(BlogProperties.SMTP_EMAIL_ENABLE.getProp()), TrueFalse.TRUE.getDesc()) && StringUtils.equals(HaloConst.OPTIONS.get(BlogProperties.COMMENT_REPLY_NOTICE.getProp()), TrueFalse.TRUE.getDesc())) {
+                try {
+                    if (status == 1 && Validator.isEmail(comment.getCommentAuthorEmail())) {
+                        Map<String, Object> map = new HashMap<>();
+                        if (StringUtils.equals(post.getPostType(), PostType.POST_TYPE_POST.getDesc())) {
+                            map.put("pageUrl", HaloConst.OPTIONS.get(BlogProperties.BLOG_URL.getProp()) + "/archives/" + post.getPostUrl() + "#comment-id-" + comment.getCommentId());
+                        } else {
+                            map.put("pageUrl", HaloConst.OPTIONS.get(BlogProperties.BLOG_URL.getProp()) + "/p/" + post.getPostUrl() + "#comment-id-" + comment.getCommentId());
+                        }
+                        map.put("pageName", post.getPostTitle());
+                        map.put("commentContent", comment.getCommentContent());
+                        map.put("blogUrl", HaloConst.OPTIONS.get(BlogProperties.BLOG_URL.getProp()));
+                        map.put("blogTitle", HaloConst.OPTIONS.get(BlogProperties.BLOG_TITLE.getProp()));
+                        map.put("author", user.getUserDisplayName());
+                        mailService.sendTemplateMail(
+                                comment.getCommentAuthorEmail(),
+                                "您在" + HaloConst.OPTIONS.get(BlogProperties.BLOG_URL.getProp()) + "的评论已审核通过！", map, "common/mail/mail_passed.ftl");
+                    }
+                } catch (Exception e) {
+                    log.error("邮件服务器未配置：{}", e.getMessage());
+                }
+            }
+        }
     }
 }

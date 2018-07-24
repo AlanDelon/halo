@@ -4,12 +4,16 @@ import cc.ryanc.halo.model.domain.Logs;
 import cc.ryanc.halo.model.dto.HaloConst;
 import cc.ryanc.halo.model.dto.JsonResult;
 import cc.ryanc.halo.model.dto.LogsRecord;
+import cc.ryanc.halo.model.enums.BlogProperties;
+import cc.ryanc.halo.model.enums.ResultCode;
 import cc.ryanc.halo.service.LogsService;
 import cc.ryanc.halo.service.OptionsService;
 import cc.ryanc.halo.utils.HaloUtils;
 import cc.ryanc.halo.web.controller.core.BaseController;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.io.file.FileReader;
+import cn.hutool.core.io.file.FileWriter;
 import cn.hutool.core.util.ZipUtil;
 import cn.hutool.extra.servlet.ServletUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -25,8 +29,6 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.servlet.http.HttpServletRequest;
 import javax.websocket.server.PathParam;
 import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.List;
 
 /**
@@ -73,17 +75,17 @@ public class ThemeController extends BaseController {
                                   HttpServletRequest request) {
         try {
             //保存主题设置项
-            optionsService.saveOption("theme", siteTheme);
+            optionsService.saveOption(BlogProperties.THEME.getProp(), siteTheme);
             //设置主题
             BaseController.THEME = siteTheme;
-            log.info("已将主题改变为：" + siteTheme);
+            log.info("已将主题改变为：{}", siteTheme);
             logsService.saveByLogs(
                     new Logs(LogsRecord.CHANGE_THEME, "更换为" + siteTheme, ServletUtil.getClientIP(request), DateUtil.date())
             );
-            return new JsonResult(1,"主题已设置为"+siteTheme);
+            return new JsonResult(ResultCode.SUCCESS.getCode(), "主题已设置为" + siteTheme);
         } catch (Exception e) {
-            log.error("主题设置失败，当前主题为：" + siteTheme);
-            return new JsonResult(0,"主题设置失败");
+            log.error("主题设置失败，当前主题为：{}", siteTheme);
+            return new JsonResult(ResultCode.FAIL.getCode(), "主题设置失败");
         }
     }
 
@@ -97,7 +99,7 @@ public class ThemeController extends BaseController {
     @RequestMapping(value = "/upload", method = RequestMethod.POST)
     @ResponseBody
     public JsonResult uploadTheme(@RequestParam("file") MultipartFile file,
-                               HttpServletRequest request) {
+                                  HttpServletRequest request) {
         try {
             if (!file.isEmpty()) {
                 //获取项目根路径
@@ -108,19 +110,19 @@ public class ThemeController extends BaseController {
                 logsService.saveByLogs(
                         new Logs(LogsRecord.UPLOAD_THEME, file.getOriginalFilename(), ServletUtil.getClientIP(request), DateUtil.date())
                 );
-                ZipUtil.unzip(themePath,new File(basePath.getAbsolutePath(), "templates/themes/"));
+                ZipUtil.unzip(themePath, new File(basePath.getAbsolutePath(), "templates/themes/"));
                 FileUtil.del(themePath);
                 HaloConst.THEMES.clear();
                 HaloConst.THEMES = HaloUtils.getThemes();
             } else {
                 log.error("上传主题失败，没有选择文件");
-                return new JsonResult(0,"请选择上传的主题！");
+                return new JsonResult(ResultCode.FAIL.getCode(), "请选择上传的主题！");
             }
         } catch (Exception e) {
-            log.error("上传主题失败：", e.getMessage());
-            return new JsonResult(0,"主题上传失败！");
+            log.error("上传主题失败：{}", e.getMessage());
+            return new JsonResult(ResultCode.FAIL.getCode(), "主题上传失败！");
         }
-        return new JsonResult(1,"主题上传成功！");
+        return new JsonResult(ResultCode.SUCCESS.getCode(), "主题上传成功！");
     }
 
     /**
@@ -138,7 +140,7 @@ public class ThemeController extends BaseController {
             HaloConst.THEMES.clear();
             HaloConst.THEMES = HaloUtils.getThemes();
         } catch (Exception e) {
-            log.error("删除主题失败：{0}", e.getMessage());
+            log.error("删除主题失败：{}", e.getMessage());
         }
         return "redirect:/admin/themes";
     }
@@ -182,9 +184,10 @@ public class ThemeController extends BaseController {
             File basePath = new File(ResourceUtils.getURL("classpath:").getPath());
             //获取主题路径
             File themesPath = new File(basePath.getAbsolutePath(), new StringBuffer("templates/themes/").append(BaseController.THEME).append("/").append(tplName).toString());
-            tplContent = HaloUtils.getFileContent(themesPath.getAbsolutePath());
+            FileReader fileReader = new FileReader(themesPath);
+            tplContent = fileReader.readString();
         } catch (Exception e) {
-            log.error("获取模板文件错误：{0}", e.getMessage());
+            log.error("获取模板文件错误：{}", e.getMessage());
         }
         return tplContent;
     }
@@ -199,21 +202,21 @@ public class ThemeController extends BaseController {
     @PostMapping(value = "/editor/save")
     @ResponseBody
     public JsonResult saveTpl(@RequestParam("tplName") String tplName,
-                           @RequestParam("tplContent") String tplContent) {
+                              @RequestParam("tplContent") String tplContent) {
         if (StringUtils.isBlank(tplContent)) {
-            return new JsonResult(0,"模板不能为空！");
+            return new JsonResult(ResultCode.FAIL.getCode(), "模板不能为空！");
         }
         try {
             //获取项目根路径
             File basePath = new File(ResourceUtils.getURL("classpath:").getPath());
             //获取主题路径
             File tplPath = new File(basePath.getAbsolutePath(), new StringBuffer("templates/themes/").append(BaseController.THEME).append("/").append(tplName).toString());
-            byte[] tplContentByte = tplContent.getBytes("UTF-8");
-            Files.write(Paths.get(tplPath.getAbsolutePath()), tplContentByte);
+            FileWriter fileWriter = new FileWriter(tplPath);
+            fileWriter.write(tplContent);
         } catch (Exception e) {
-            log.error("模板保存失败：{0}", e.getMessage());
-            return new JsonResult(0,"模板保存失败！");
+            log.error("模板保存失败：{}", e.getMessage());
+            return new JsonResult(ResultCode.FAIL.getCode(), "模板保存失败！");
         }
-        return new JsonResult(1,"模板保存成功！");
+        return new JsonResult(ResultCode.SUCCESS.getCode(), "模板保存成功！");
     }
 }

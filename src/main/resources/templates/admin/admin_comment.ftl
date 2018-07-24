@@ -53,9 +53,9 @@
                                                 <td>${comment.commentContent}</td>
                                                 <td>
                                                     <#if comment.post.postType == "post">
-                                                        <a target="_blank" href="/archives/${comment.post.postUrl}">${comment.post.postTitle}</a>
+                                                        <a target="_blank" href="/archives/${comment.post.postUrl}#comment-id-${comment.commentId?c}">${comment.post.postTitle}</a>
                                                     <#else >
-                                                        <a target="_blank" href="/p/${comment.post.postUrl}">${comment.post.postTitle}</a>
+                                                        <a target="_blank" href="/p/${comment.post.postUrl}#comment-id-${comment.commentId?c}">${comment.post.postTitle}</a>
                                                     </#if>
                                                 </td>
                                                 <td>${comment.commentDate}</td>
@@ -63,16 +63,16 @@
                                                     <#switch comment.commentStatus>
                                                         <#case 0>
                                                         <button class="btn btn-primary btn-xs " onclick="replyShow('${comment.commentId?c}','${comment.post.postId?c}')" <#if comment.isAdmin==1>disabled</#if>>回复</button>
-                                                        <button class="btn btn-danger btn-xs " onclick="modelShow('/admin/comments/throw?commentId=${comment.commentId?c}&status=0','确定移动到回收站？')">丢弃</button>
+                                                        <button class="btn btn-danger btn-xs " onclick="modelShow('/admin/comments/throw?commentId=${comment.commentId?c}&status=0&page=${comments.number}','确定移动到回收站？')">丢弃</button>
                                                         <#break >
                                                         <#case 1>
                                                         <a data-pjax="true" class="btn btn-primary btn-xs " href="/admin/comments/revert?commentId=${comment.commentId?c}&status=1">通过</a>
                                                         <button class="btn btn-info btn-xs " onclick="replyShow('${comment.commentId?c}','${comment.post.postId?c}')">通过并回复</button>
-                                                        <button class="btn btn-danger btn-xs " onclick="modelShow('/admin/comments/throw?commentId=${comment.commentId?c}&status=1','确定移动到回收站？')">丢弃</button>
+                                                        <button class="btn btn-danger btn-xs " onclick="modelShow('/admin/comments/throw?commentId=${comment.commentId?c}&status=1&page=${comments.number}','确定移动到回收站？')">丢弃</button>
                                                         <#break >
                                                         <#case 2>
                                                         <a data-pjax="true" class="btn btn-primary btn-xs " href="/admin/comments/revert?commentId=${comment.commentId?c}&status=2">还原</a>
-                                                        <button class="btn btn-danger btn-xs " onclick="modelShow('/admin/comments/remove?commentId=${comment.commentId?c}&status=2','确定要永久删除？')">删除</button>
+                                                        <button class="btn btn-danger btn-xs " onclick="modelShow('/admin/comments/remove?commentId=${comment.commentId?c}&status=2&page=${comments.number}','确定要永久删除？')">删除</button>
                                                         <#break >
                                                     </#switch>
                                                 </td>
@@ -130,7 +130,8 @@
                     </div>
                     <form method="post" action="/admin/comments/reply">
                         <div class="modal-body">
-                            <textarea class="form-control" rows="5" id="commentContent" name="commentContent" style="resize: none"></textarea>
+                            <textarea class="form-control comment-input-content" rows="5" id="commentContent" name="commentContent" style="resize: none"></textarea>
+                            <div class="OwO"></div>
                         </div>
                         <div class="modal-footer">
                             <input type="hidden" id="commentId" name="commentId" value=""/>
@@ -144,6 +145,14 @@
             </div>
         </div>
         <script>
+            var s = new OwO({
+                container: document.getElementsByClassName('OwO')[0],
+                target: document.getElementsByClassName('comment-input-content')[0],
+                position: 'down',
+                width: '100%',
+                maxHeight: '210px',
+                api:"/static/plugins/OwO/OwO.min.json"
+            });
             function modelShow(url,message) {
                 $('#url').val(url);
                 $('#message').html(message);

@@ -4,6 +4,7 @@ import cc.ryanc.halo.model.domain.Post;
 import cc.ryanc.halo.model.dto.BackupDto;
 import cc.ryanc.halo.model.dto.HaloConst;
 import cc.ryanc.halo.model.dto.Theme;
+import cc.ryanc.halo.model.enums.BlogProperties;
 import cn.hutool.core.io.FileUtil;
 import com.sun.syndication.feed.rss.Channel;
 import com.sun.syndication.feed.rss.Content;
@@ -43,12 +44,6 @@ import java.util.*;
  */
 @Slf4j
 public class HaloUtils {
-
-    private final static Calendar NOW = Calendar.getInstance();
-
-    public final static String YEAR = NOW.get(Calendar.YEAR) + "";
-
-    public final static String MONTH = (NOW.get(Calendar.MONTH) + 1) + "";
 
     private static ArrayList<String> FILE_LIST = new ArrayList<>();
 
@@ -251,27 +246,6 @@ public class HaloUtils {
     }
 
     /**
-     * 获取文件内容
-     *
-     * @param filePath filePath
-     * @return String
-     */
-    public static String getFileContent(String filePath) {
-        File file = new File(filePath);
-        Long fileLength = file.length();
-        byte[] fileContent = new byte[fileLength.intValue()];
-        try {
-            FileInputStream inputStream = new FileInputStream(file);
-            inputStream.read(fileContent);
-            inputStream.close();
-            return new String(fileContent, "UTF-8");
-        } catch (Exception e) {
-            log.error("读取模板文件错误：", e.getMessage());
-        }
-        return null;
-    }
-
-    /**
      * 获取当前时间
      *
      * @return 字符串
@@ -288,78 +262,32 @@ public class HaloUtils {
     }
 
     /**
-     * 备份数据库
-     *
-     * @param hostIp       ip
-     * @param userName     用户名
-     * @param password     password
-     * @param savePath     保存路径
-     * @param fileName     文件名
-     * @param databaseName 数据库名
-     * @return boolean
-     * @throws InterruptedException InterruptedException
-     */
-    public static boolean exportDatabase(String hostIp, String userName, String password, String savePath, String fileName, String databaseName) throws InterruptedException {
-        File saveFile = new File(savePath);
-        if (!saveFile.exists()) {
-            saveFile.mkdirs();
-        }
-        if (!savePath.endsWith(File.separator)) {
-            savePath = savePath + File.separator;
-        }
-
-        PrintWriter printWriter = null;
-        BufferedReader bufferedReader = null;
-        try {
-            printWriter = new PrintWriter(new OutputStreamWriter(new FileOutputStream(savePath + fileName), "utf-8"));
-            Process process = Runtime.getRuntime().exec(" mysqldump -h" + hostIp + " -u" + userName + " -p" + password + " --set-charset=UTF8 " + databaseName);
-            InputStreamReader inputStreamReader = new InputStreamReader(process.getInputStream(), "utf-8");
-            bufferedReader = new BufferedReader(inputStreamReader);
-            String line;
-            while ((line = bufferedReader.readLine()) != null) {
-                printWriter.println(line);
-            }
-            printWriter.flush();
-            if (process.waitFor() == 0) {
-                return true;
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                if (bufferedReader != null) {
-                    bufferedReader.close();
-                }
-                if (printWriter != null) {
-                    printWriter.close();
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        return false;
-    }
-
-    /**
      * 导出为文件
      *
      * @param data     内容
      * @param filePath 保存路径
      * @param fileName 文件名
      */
-    public static void postToFile(String data, String filePath, String fileName) {
+    public static void postToFile(String data, String filePath, String fileName) throws IOException {
+        FileWriter fileWriter = null;
+        BufferedWriter bufferedWriter = null;
         try {
             File file = new File(filePath);
             if (!file.exists()) {
                 file.mkdirs();
             }
-            //true = append file
-            FileWriter fileWritter = new FileWriter(file.getAbsoluteFile() + "/" + fileName, true);
-            BufferedWriter bufferWritter = new BufferedWriter(fileWritter);
-            bufferWritter.write(data);
-            bufferWritter.close();
+            fileWriter = new FileWriter(file.getAbsoluteFile() + "/" + fileName, true);
+            bufferedWriter = new BufferedWriter(fileWriter);
+            bufferedWriter.write(data);
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            if (null != bufferedWriter) {
+                bufferedWriter.close();
+            }
+            if (null != fileWriter) {
+                fileWriter.close();
+            }
         }
     }
 
@@ -372,20 +300,20 @@ public class HaloUtils {
      */
     public static String getRss(List<Post> posts) throws FeedException {
         Channel channel = new Channel("rss_2.0");
-        if (null == HaloConst.OPTIONS.get("blog_title")) {
+        if (null == HaloConst.OPTIONS.get(BlogProperties.BLOG_TITLE.getProp())) {
             channel.setTitle("");
         } else {
-            channel.setTitle(HaloConst.OPTIONS.get("blog_title"));
+            channel.setTitle(HaloConst.OPTIONS.get(BlogProperties.BLOG_TITLE.getProp()));
         }
-        if (null == HaloConst.OPTIONS.get("blog_url")) {
+        if (null == HaloConst.OPTIONS.get(BlogProperties.BLOG_URL.getProp())) {
             channel.setLink("");
         } else {
-            channel.setLink(HaloConst.OPTIONS.get("blog_url"));
+            channel.setLink(HaloConst.OPTIONS.get(BlogProperties.BLOG_URL.getProp()));
         }
-        if (null == HaloConst.OPTIONS.get("seo_desc")) {
+        if (null == HaloConst.OPTIONS.get(BlogProperties.SEO_DESC.getProp())) {
             channel.setDescription("");
         } else {
-            channel.setDescription(HaloConst.OPTIONS.get("seo_desc"));
+            channel.setDescription(HaloConst.OPTIONS.get(BlogProperties.SEO_DESC.getProp()));
         }
         channel.setLanguage("zh-CN");
         List<Item> items = new ArrayList<>();
@@ -405,7 +333,7 @@ public class HaloUtils {
             value = new String(xmlChar);
             content.setValue(value);
             item.setContent(content);
-            item.setLink(HaloConst.OPTIONS.get("blog_url") + "/archives/" + post.getPostUrl());
+            item.setLink(HaloConst.OPTIONS.get(BlogProperties.BLOG_URL.getProp()) + "/archives/" + post.getPostUrl());
             item.setPubDate(post.getPostDate());
             items.add(item);
         }
@@ -424,7 +352,7 @@ public class HaloUtils {
         String head = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">";
         String urlBody = "";
         String urlItem;
-        String urlPath = HaloConst.OPTIONS.get("blog_url") + "/archives/";
+        String urlPath = HaloConst.OPTIONS.get(BlogProperties.BLOG_URL.getProp()) + "/archives/";
         for (Post post : posts) {
             urlItem = "<url><loc>" + urlPath + post.getPostUrl() + "</loc><lastmod>" + getStringDate(post.getPostDate(), "yyyy-MM-dd'T'HH:mm:ss.SSSXXX") + "</lastmod>" + "</url>";
             urlBody += urlItem;

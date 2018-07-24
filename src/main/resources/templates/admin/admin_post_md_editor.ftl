@@ -1,3 +1,4 @@
+<#compress >
 <#include "module/_macro.ftl">
 <@head title="${options.blog_title} | 后台管理：文章编辑"></@head>
 <div class="wrapper">
@@ -53,14 +54,16 @@
                             <button class="btn btn-default btn-sm " id="btn_change_postUrl" onclick="urlOnBlurAuto()" style="display: none;">确定</button>
                         </span>
                     </div>
+</#compress>
                     <div class="box box-primary">
                         <!-- Editor.md编辑器 -->
                         <div class="box-body pad">
-                            <div id="markdown-editor" style="z-index: 1200">
+                            <div id="markdown-editor">
                                 <textarea style="display:none;"><#if post??>${post.postContentMd?if_exists}</#if></textarea>
                             </div>
                         </div>
                     </div>
+<#compress >
                 </div>
                 <div class="col-md-3">
                     <div class="box box-primary">
@@ -73,8 +76,11 @@
                             </div>
                         </div>
                         <div class="box-body">
-                            <div>
-                            </div>
+                            <label for="allowComment" class="control-label">开启评论：</label>
+                            <select class="form-control" id="allowComment" name="allowComment">
+                                <option value="1" <#if post?? && post.allowComment?default(1)==1>selected</#if>>是</option>
+                                <option value="0" <#if post?? && post.allowComment?default(1)==0>selected</#if>>否</option>
+                            </select>
                         </div>
                         <div class="box-footer">
                             <button onclick="push(1)" class="btn btn-default btn-sm ">保存草稿</button>
@@ -165,7 +171,6 @@
                 </div>
             </div>
         </section>
-        <script src="/static/plugins/layer/layer.js"></script>
         <script src="/static/plugins/editor.md/editormd.min.js"></script>
         <script src="/static/plugins/jquery-tageditor/jquery.tag-editor.min.js"></script>
         <script src="/static/plugins/jquery-tageditor/jquery.caret.min.js"></script>
@@ -237,7 +242,13 @@
                     imageFormats : ["jpg", "jpeg", "gif", "png", "bmp", "webp"],
                     imageUploadURL : "/admin/attachments/upload/editor",
                     htmlDecode: "script",
-                    tocStartLevel : 1
+                    tocStartLevel : 1,
+                    onfullscreen : function() {
+                        $("#markdown-editor").css("z-index","9999");
+                    },
+                    onfullscreenExit : function() {
+                        $("#markdown-editor").css("z-index","");
+                    }
                     // toolbarIcons : function () {
                     //     return editormd.toolbarModes["simple"];
                     // }
@@ -327,7 +338,8 @@
                         'postContent': editor.getHTML(),
                         'postThumbnail': $('#selectImg').attr('src'),
                         'cateList' : cateList.toString(),
-                        'tagList' : $('#tagList').tagEditor('getTags')[0].tags.toString()
+                        'tagList' : $('#tagList').tagEditor('getTags')[0].tags.toString(),
+                        'allowComment' : $('#allowComment').val()
                     },
                     success: function (data) {
                         if(data.code==1){
@@ -416,3 +428,4 @@
     <#include "module/_footer.ftl">
 </div>
 <@footer></@footer>
+</#compress>

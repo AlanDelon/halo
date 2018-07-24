@@ -18,20 +18,30 @@
     <link rel="stylesheet" href="/anatole/source/css/blog_basic.min.css?version=88107691fe">
     <link href="/anatole/source/css/style.min.css" type="text/css" rel="stylesheet" />
     <link rel="alternate" type="application/rss+xml" title="atom 1.0" href="/feed.xml">
-    <#if options.anatole_style_post_title_lower?default("true") == "false">
     <style>
+        <#if options.anatole_style_post_title_lower?default("true") == "false">
         .post .post-title h3 {
             text-transform: none;
         }
+        </#if>
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+            background-color: #eee;
+        }
+        ::-webkit-scrollbar-thumb {
+            background-color: ${options.anatole_style_scrollbar?default("#3798e8")};
+        }
+        ::-webkit-scrollbar-track {
+            background-color: #eee;
+        }
+        ${options.anatole_style_self?if_exists}
     </style>
-    </#if>
 </head>
 <body>
 </#macro>
 <#macro footer>
 <script type="text/javascript" src="/anatole/source/js/jquery.min.js"></script>
-<script type="text/javascript" src="/anatole/source/js/jquery-migrate-1.2.1.min.js"></script>
-<script type="text/javascript" src="/anatole/source/js/jquery.appear.min.js"></script>
 <script type="text/javascript">
     var url = location.href;
     var urlstatus = false;

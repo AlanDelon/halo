@@ -5,6 +5,7 @@ import cc.ryanc.halo.model.dto.HaloConst;
 import cc.ryanc.halo.model.dto.JsonResult;
 import cc.ryanc.halo.model.dto.LogsRecord;
 import cc.ryanc.halo.model.enums.PostType;
+import cc.ryanc.halo.model.enums.ResultCode;
 import cc.ryanc.halo.service.GalleryService;
 import cc.ryanc.halo.service.LinkService;
 import cc.ryanc.halo.service.LogsService;
@@ -98,10 +99,9 @@ public class PageController {
     @PostMapping(value = "/links/save")
     public String saveLink(@ModelAttribute Link link) {
         try {
-            Link backLink = linkService.saveByLink(link);
-            log.info("保存成功，数据为：" + backLink);
+            linkService.saveByLink(link);
         } catch (Exception e) {
-            log.error("未知错误：", e.getMessage());
+            log.error("保存/修改友情链接失败：{}", e.getMessage());
         }
         return "redirect:/admin/page/links";
     }
@@ -115,10 +115,9 @@ public class PageController {
     @GetMapping(value = "/links/remove")
     public String removeLink(@PathParam("linkId") Long linkId) {
         try {
-            Link link = linkService.removeByLinkId(linkId);
-            log.info("删除的友情链接：" + link);
+            linkService.removeByLinkId(linkId);
         } catch (Exception e) {
-            log.error("未知错误：", e.getMessage());
+            log.error("删除友情链接失败：{}", e.getMessage());
         }
         return "redirect:/admin/page/links";
     }
@@ -179,18 +178,18 @@ public class PageController {
      * 删除图库中的图片
      *
      * @param galleryId 图片编号
-     * @return true：删除成功，false：删除失败
+     * @return JsonResult
      */
     @GetMapping(value = "/gallery/remove")
     @ResponseBody
-    public boolean removeGallery(@RequestParam("galleryId") Long galleryId) {
+    public JsonResult removeGallery(@RequestParam("galleryId") Long galleryId) {
         try {
             galleryService.removeByGalleryId(galleryId);
         } catch (Exception e) {
-            log.error("删除图片失败：{0}", e.getMessage());
-            return false;
+            log.error("删除图片失败：{}", e.getMessage());
+            return new JsonResult(ResultCode.FAIL.getCode(), "删除失败！");
         }
-        return true;
+        return new JsonResult(ResultCode.SUCCESS.getCode(), "删除成功！");
     }
 
 
@@ -220,21 +219,21 @@ public class PageController {
             User user = (User) session.getAttribute(HaloConst.USER_SESSION_KEY);
             post.setUser(user);
             post.setPostType(PostType.POST_TYPE_PAGE.getDesc());
-            if(null!=post.getPostId()){
+            if (null != post.getPostId()) {
                 post.setPostViews(postService.findByPostId(post.getPostId()).get().getPostViews());
                 post.setPostDate(postService.findByPostId(post.getPostId()).get().getPostDate());
                 post.setPostUpdate(DateUtil.date());
                 msg = "更新成功";
-            }else{
+            } else {
                 post.setPostDate(DateUtil.date());
                 post.setPostUpdate(DateUtil.date());
             }
             postService.saveByPost(post);
             logsService.saveByLogs(new Logs(LogsRecord.PUSH_PAGE, post.getPostTitle(), ServletUtil.getClientIP(request), DateUtil.date()));
-            return new JsonResult(1,msg);
+            return new JsonResult(ResultCode.SUCCESS.getCode(), msg);
         } catch (Exception e) {
-            log.error("未知错误：{0}", e.getMessage());
-            return new JsonResult(0,"保存失败");
+            log.error("保存页面失败：{}", e.getMessage());
+            return new JsonResult(ResultCode.FAIL.getCode(), "保存失败");
         }
     }
 
@@ -256,16 +255,16 @@ public class PageController {
      * 检查该路径是否已经存在
      *
      * @param postUrl postUrl
-     * @return true or false
+     * @return JsonResult
      */
     @GetMapping(value = "/checkUrl")
     @ResponseBody
-    public boolean checkUrlExists(@PathParam("postUrl") String postUrl) {
+    public JsonResult checkUrlExists(@PathParam("postUrl") String postUrl) {
         Post post = postService.findByPostUrl(postUrl, PostType.POST_TYPE_PAGE.getDesc());
         // TODO 还没写完
         if (null != post || StringUtils.equals("archives", postUrl) || StringUtils.equals("galleries", postUrl)) {
-            return true;
+            return new JsonResult(ResultCode.FAIL.getCode(), "该路径已经存在！");
         }
-        return false;
+        return new JsonResult(ResultCode.SUCCESS.getCode(), "");
     }
 }

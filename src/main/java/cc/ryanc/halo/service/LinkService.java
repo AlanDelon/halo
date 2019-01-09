@@ -6,6 +6,10 @@ import java.util.List;
 import java.util.Optional;
 
 /**
+ * <pre>
+ *     友情链接业务逻辑接口
+ * </pre>
+ *
  * @author : RYAN0UP
  * @date : 2017/11/14
  */
@@ -17,7 +21,7 @@ public interface LinkService {
      * @param link link
      * @return Link
      */
-    Link saveByLink(Link link);
+    Link save(Link link);
 
     /**
      * 根据编号删除
@@ -25,14 +29,14 @@ public interface LinkService {
      * @param linkId linkId
      * @return Link
      */
-    Link removeByLinkId(Long linkId);
+    Link remove(Long linkId);
 
     /**
      * 查询所有
      *
      * @return List
      */
-    List<Link> findAllLinks();
+    List<Link> findAll();
 
     /**
      * 根据编号查询单个链接

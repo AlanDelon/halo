@@ -6,6 +6,10 @@ import java.util.List;
 import java.util.Optional;
 
 /**
+ * <pre>
+ *     标签业务逻辑接口
+ * </pre>
+ *
  * @author : RYAN0UP
  * @date : 2018/1/12
  */
@@ -17,7 +21,7 @@ public interface TagService {
      * @param tag tag
      * @return Tag
      */
-    Tag saveByTag(Tag tag);
+    Tag save(Tag tag);
 
     /**
      * 根据编号移除标签
@@ -25,14 +29,14 @@ public interface TagService {
      * @param tagId tagId
      * @return Tag
      */
-    Tag removeByTagId(Long tagId);
+    Tag remove(Long tagId);
 
     /**
      * 获取所有标签
      *
      * @return List
      */
-    List<Tag> findAllTags();
+    List<Tag> findAll();
 
     /**
      * 查询所有下面有已发布文章的标签

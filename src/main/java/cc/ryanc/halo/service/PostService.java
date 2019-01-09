@@ -6,12 +6,17 @@ import cc.ryanc.halo.model.domain.Tag;
 import cc.ryanc.halo.model.dto.Archive;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
 /**
+ * <pre>
+ *     文章/页面业务逻辑接口
+ * </pre>
+ *
  * @author : RYAN0UP
  * @date : 2017/11/14
  */
@@ -23,7 +28,7 @@ public interface PostService {
      * @param post Post
      * @return Post
      */
-    Post saveByPost(Post post);
+    Post save(Post post);
 
     /**
      * 根据编号删除文章
@@ -31,7 +36,7 @@ public interface PostService {
      * @param postId postId
      * @return Post
      */
-    Post removeByPostId(Long postId);
+    Post remove(Long postId);
 
     /**
      * 修改文章状态
@@ -43,13 +48,6 @@ public interface PostService {
     Post updatePostStatus(Long postId, Integer status);
 
     /**
-     * 修改文章阅读量
-     *
-     * @param post post
-     */
-    void updatePostView(Post post);
-
-    /**
      * 批量修改摘要
      *
      * @param postSummary postSummary
@@ -57,21 +55,12 @@ public interface PostService {
     void updateAllSummary(Integer postSummary);
 
     /**
-     * 获取文章列表 分页
-     *
-     * @param postType post or page
-     * @param pageable 分页信息
-     * @return Page
-     */
-    Page<Post> findAllPosts(String postType, Pageable pageable);
-
-    /**
      * 获取文章列表 不分页
      *
      * @param postType post or page
      * @return List
      */
-    List<Post> findAllPosts(String postType);
+    List<Post> findAll(String postType);
 
     /**
      * 模糊查询文章
@@ -182,6 +171,16 @@ public interface PostService {
     List<Archive> findPostGroupByYear();
 
     /**
+     * @Author Aquan
+     * @Description 查询归档信息 查看所有文章
+     * @Date 2019.1.4 11:14
+     * @Param
+     * @return List
+     **/
+    List<Archive> findAllPost();
+
+
+    /**
      * 根据年份和月份查询文章
      *
      * @param year  year
@@ -280,4 +279,29 @@ public interface PostService {
      * @return String
      */
     String buildSiteMap(List<Post> posts);
+
+    /**
+     * 缓存阅读数
+     *
+     * @param postId postId
+     */
+    void cacheViews(Long postId);
+
+    /**
+     * 组装分类目录和标签
+     *
+     * @param post     post
+     * @param cateList cateList
+     * @param tagList  tagList
+     * @return Post Post
+     */
+    Post buildCategoriesAndTags(Post post, List<String> cateList, @RequestParam("tagList") String tagList);
+
+    /**
+     * 获取最近的文章
+     *
+     * @param limit 条数
+     * @return List
+     */
+    List<Post> getRecentPosts(int limit);
 }

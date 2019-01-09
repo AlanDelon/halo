@@ -1,35 +1,52 @@
 package cc.ryanc.halo.web.controller.admin;
 
-import cc.ryanc.halo.model.domain.*;
+import cc.ryanc.halo.model.domain.Gallery;
+import cc.ryanc.halo.model.domain.Link;
+import cc.ryanc.halo.model.domain.Post;
+import cc.ryanc.halo.model.domain.User;
 import cc.ryanc.halo.model.dto.HaloConst;
 import cc.ryanc.halo.model.dto.JsonResult;
 import cc.ryanc.halo.model.dto.LogsRecord;
-import cc.ryanc.halo.model.enums.PostType;
-import cc.ryanc.halo.model.enums.ResultCode;
+import cc.ryanc.halo.model.enums.BlogPropertiesEnum;
+import cc.ryanc.halo.model.enums.PostTypeEnum;
+import cc.ryanc.halo.model.enums.ResultCodeEnum;
 import cc.ryanc.halo.service.GalleryService;
 import cc.ryanc.halo.service.LinkService;
 import cc.ryanc.halo.service.LogsService;
 import cc.ryanc.halo.service.PostService;
+import cc.ryanc.halo.utils.HaloUtils;
+import cc.ryanc.halo.utils.LocaleMessageUtil;
+import cc.ryanc.halo.utils.MarkdownUtils;
 import cn.hutool.core.date.DateUtil;
-import cn.hutool.extra.servlet.ServletUtil;
+import cn.hutool.core.util.RandomUtil;
+import cn.hutool.core.util.StrUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.propertyeditors.CustomDateEditor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.ObjectError;
+import org.springframework.web.bind.ServletRequestDataBinder;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
-import javax.websocket.server.PathParam;
+import javax.validation.Valid;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
 /**
+ * <pre>
+ *     后台页面管理控制器
+ * </pre>
+ *
  * @author : RYAN0UP
  * @date : 2017/12/10
  */
@@ -39,17 +56,15 @@ import java.util.Optional;
 public class PageController {
 
     @Autowired
+    LocaleMessageUtil localeMessageUtil;
+    @Autowired
     private LinkService linkService;
-
     @Autowired
     private GalleryService galleryService;
-
     @Autowired
     private PostService postService;
-
     @Autowired
     private LogsService logsService;
-
     @Autowired
     private HttpServletRequest request;
 
@@ -57,11 +72,12 @@ public class PageController {
      * 页面管理页面
      *
      * @param model model
+     *
      * @return 模板路径admin/admin_page
      */
     @GetMapping
     public String pages(Model model) {
-        List<Post> posts = postService.findAllPosts(PostType.POST_TYPE_PAGE.getDesc());
+        final List<Post> posts = postService.findAll(PostTypeEnum.POST_TYPE_PAGE.getDesc());
         model.addAttribute("pages", posts);
         return "admin/admin_page";
     }
@@ -81,12 +97,13 @@ public class PageController {
      *
      * @param model  model
      * @param linkId linkId 友情链接编号
+     *
      * @return String 模板路径admin/admin_page_link
      */
-    @GetMapping("/links/edit")
-    public String toEditLink(Model model, @PathParam("linkId") Long linkId) {
-        Optional<Link> link = linkService.findByLinkId(linkId);
-        model.addAttribute("updateLink", link.get());
+    @GetMapping(value = "/links/edit")
+    public String toEditLink(Model model, @RequestParam("linkId") Long linkId) {
+        final Optional<Link> link = linkService.findByLinkId(linkId);
+        model.addAttribute("updateLink", link.orElse(new Link()));
         return "admin/admin_page_link";
     }
 
@@ -94,30 +111,37 @@ public class PageController {
      * 处理添加/修改友链的请求并渲染页面
      *
      * @param link Link实体
-     * @return 重定向到/admin/page/links
+     *
+     * @return JsonResult
      */
     @PostMapping(value = "/links/save")
-    public String saveLink(@ModelAttribute Link link) {
-        try {
-            linkService.saveByLink(link);
-        } catch (Exception e) {
-            log.error("保存/修改友情链接失败：{}", e.getMessage());
+    @ResponseBody
+    public JsonResult saveLink(@Valid Link link, BindingResult result) {
+        if (result.hasErrors()) {
+            for (ObjectError error : result.getAllErrors()) {
+                return new JsonResult(ResultCodeEnum.FAIL.getCode(), error.getDefaultMessage());
+            }
         }
-        return "redirect:/admin/page/links";
+        link = linkService.save(link);
+        if (null == link) {
+            return new JsonResult(ResultCodeEnum.FAIL.getCode(), localeMessageUtil.getMessage("code.admin.common.save-failed"));
+        }
+        return new JsonResult(ResultCodeEnum.SUCCESS.getCode(), localeMessageUtil.getMessage("code.admin.common.save-success"));
     }
 
     /**
      * 处理删除友情链接的请求并重定向
      *
      * @param linkId 友情链接编号
+     *
      * @return 重定向到/admin/page/links
      */
     @GetMapping(value = "/links/remove")
-    public String removeLink(@PathParam("linkId") Long linkId) {
+    public String removeLink(@RequestParam("linkId") Long linkId) {
         try {
-            linkService.removeByLinkId(linkId);
+            linkService.remove(linkId);
         } catch (Exception e) {
-            log.error("删除友情链接失败：{}", e.getMessage());
+            log.error("Deleting a friendship link failed: {}", e.getMessage());
         }
         return "redirect:/admin/page/links";
     }
@@ -128,15 +152,16 @@ public class PageController {
      * @param model model
      * @param page  当前页码
      * @param size  每页显示的条数
+     *
      * @return 模板路径admin/admin_page_gallery
      */
     @GetMapping(value = "/galleries")
     public String gallery(Model model,
                           @RequestParam(value = "page", defaultValue = "0") Integer page,
                           @RequestParam(value = "size", defaultValue = "18") Integer size) {
-        Sort sort = new Sort(Sort.Direction.DESC, "galleryId");
-        Pageable pageable = PageRequest.of(page, size, sort);
-        Page<Gallery> galleries = galleryService.findAllGalleries(pageable);
+        final Sort sort = new Sort(Sort.Direction.DESC, "galleryId");
+        final Pageable pageable = PageRequest.of(page, size, sort);
+        final Page<Gallery> galleries = galleryService.findAll(pageable);
         model.addAttribute("galleries", galleries);
         return "admin/admin_page_gallery";
     }
@@ -145,15 +170,16 @@ public class PageController {
      * 保存图片
      *
      * @param gallery gallery
+     *
      * @return 重定向到/admin/page/gallery
      */
     @PostMapping(value = "/gallery/save")
     public String saveGallery(@ModelAttribute Gallery gallery) {
         try {
-            if (StringUtils.isEmpty(gallery.getGalleryThumbnailUrl())) {
+            if (StrUtil.isEmpty(gallery.getGalleryThumbnailUrl())) {
                 gallery.setGalleryThumbnailUrl(gallery.getGalleryUrl());
             }
-            galleryService.saveByGallery(gallery);
+            galleryService.save(gallery);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -165,12 +191,13 @@ public class PageController {
      *
      * @param model     model
      * @param galleryId 图片编号
+     *
      * @return 模板路径admin/widget/_gallery-detail
      */
     @GetMapping(value = "/gallery")
-    public String gallery(Model model, @PathParam("galleryId") Long galleryId) {
-        Optional<Gallery> gallery = galleryService.findByGalleryId(galleryId);
-        model.addAttribute("gallery", gallery.get());
+    public String gallery(Model model, @RequestParam("galleryId") Long galleryId) {
+        final Optional<Gallery> gallery = galleryService.findByGalleryId(galleryId);
+        model.addAttribute("gallery", gallery.orElse(new Gallery()));
         return "admin/widget/_gallery-detail";
     }
 
@@ -178,28 +205,32 @@ public class PageController {
      * 删除图库中的图片
      *
      * @param galleryId 图片编号
+     *
      * @return JsonResult
      */
     @GetMapping(value = "/gallery/remove")
     @ResponseBody
     public JsonResult removeGallery(@RequestParam("galleryId") Long galleryId) {
         try {
-            galleryService.removeByGalleryId(galleryId);
+            galleryService.remove(galleryId);
         } catch (Exception e) {
-            log.error("删除图片失败：{}", e.getMessage());
-            return new JsonResult(ResultCode.FAIL.getCode(), "删除失败！");
+            log.error("Failed to delete image: {}", e.getMessage());
+            return new JsonResult(ResultCodeEnum.FAIL.getCode(), localeMessageUtil.getMessage("code.admin.common.delete-failed"));
         }
-        return new JsonResult(ResultCode.SUCCESS.getCode(), "删除成功！");
+        return new JsonResult(ResultCodeEnum.SUCCESS.getCode(), localeMessageUtil.getMessage("code.admin.common.delete-success"));
     }
-
 
     /**
      * 跳转到新建页面
      *
+     * @param model model
+     *
      * @return 模板路径admin/admin_page_md_editor
      */
     @GetMapping(value = "/new")
-    public String newPage() {
+    public String newPage(Model model) {
+        final List<String> customTpls = HaloUtils.getCustomTpl(HaloConst.OPTIONS.get(BlogPropertiesEnum.THEME.getProp()));
+        model.addAttribute("customTpls", customTpls);
         return "admin/admin_page_md_editor";
     }
 
@@ -212,28 +243,34 @@ public class PageController {
     @PostMapping(value = "/new/push")
     @ResponseBody
     public JsonResult pushPage(@ModelAttribute Post post, HttpSession session) {
-        String msg = "发表成功";
+        String msg = localeMessageUtil.getMessage("code.admin.common.save-success");
         try {
-            post.setPostDate(DateUtil.date());
             //发表用户
-            User user = (User) session.getAttribute(HaloConst.USER_SESSION_KEY);
+            final User user = (User) session.getAttribute(HaloConst.USER_SESSION_KEY);
             post.setUser(user);
-            post.setPostType(PostType.POST_TYPE_PAGE.getDesc());
+            post.setPostType(PostTypeEnum.POST_TYPE_PAGE.getDesc());
             if (null != post.getPostId()) {
-                post.setPostViews(postService.findByPostId(post.getPostId()).get().getPostViews());
-                post.setPostDate(postService.findByPostId(post.getPostId()).get().getPostDate());
-                post.setPostUpdate(DateUtil.date());
-                msg = "更新成功";
+                final Post oldPost = postService.findByPostId(post.getPostId()).get();
+                if (null == post.getPostDate()) {
+                    post.setPostDate(DateUtil.date());
+                }
+                post.setPostViews(oldPost.getPostViews());
+                msg = localeMessageUtil.getMessage("code.admin.common.update-success");
             } else {
                 post.setPostDate(DateUtil.date());
-                post.setPostUpdate(DateUtil.date());
             }
-            postService.saveByPost(post);
-            logsService.saveByLogs(new Logs(LogsRecord.PUSH_PAGE, post.getPostTitle(), ServletUtil.getClientIP(request), DateUtil.date()));
-            return new JsonResult(ResultCode.SUCCESS.getCode(), msg);
+            post.setPostUpdate(DateUtil.date());
+            post.setPostContent(MarkdownUtils.renderMarkdown(post.getPostContentMd()));
+            //当没有选择文章缩略图的时候，自动分配一张内置的缩略图
+            if (StrUtil.equals(post.getPostThumbnail(), BlogPropertiesEnum.DEFAULT_THUMBNAIL.getProp())) {
+                post.setPostThumbnail("/static/halo-frontend/images/thumbnail/thumbnail-" + RandomUtil.randomInt(1, 10) + ".jpg");
+            }
+            postService.save(post);
+            logsService.save(LogsRecord.PUSH_PAGE, post.getPostTitle(), request);
+            return new JsonResult(ResultCodeEnum.SUCCESS.getCode(), msg);
         } catch (Exception e) {
-            log.error("保存页面失败：{}", e.getMessage());
-            return new JsonResult(ResultCode.FAIL.getCode(), "保存失败");
+            log.error("Save page failed: {}", e.getMessage());
+            return new JsonResult(ResultCodeEnum.FAIL.getCode(), localeMessageUtil.getMessage("code.admin.common.save-failed"));
         }
     }
 
@@ -242,12 +279,15 @@ public class PageController {
      *
      * @param pageId 页面编号
      * @param model  model
+     *
      * @return admin/admin_page_md_editor
      */
     @GetMapping(value = "/edit")
-    public String editPage(@PathParam("pageId") Long pageId, Model model) {
-        Optional<Post> post = postService.findByPostId(pageId);
-        model.addAttribute("post", post.get());
+    public String editPage(@RequestParam("pageId") Long pageId, Model model) {
+        final Optional<Post> post = postService.findByPostId(pageId);
+        final List<String> customTpls = HaloUtils.getCustomTpl(HaloConst.OPTIONS.get(BlogPropertiesEnum.THEME.getProp()));
+        model.addAttribute("post", post.orElse(new Post()));
+        model.addAttribute("customTpls", customTpls);
         return "admin/admin_page_md_editor";
     }
 
@@ -255,16 +295,22 @@ public class PageController {
      * 检查该路径是否已经存在
      *
      * @param postUrl postUrl
+     *
      * @return JsonResult
      */
     @GetMapping(value = "/checkUrl")
     @ResponseBody
-    public JsonResult checkUrlExists(@PathParam("postUrl") String postUrl) {
-        Post post = postService.findByPostUrl(postUrl, PostType.POST_TYPE_PAGE.getDesc());
-        // TODO 还没写完
-        if (null != post || StringUtils.equals("archives", postUrl) || StringUtils.equals("galleries", postUrl)) {
-            return new JsonResult(ResultCode.FAIL.getCode(), "该路径已经存在！");
+    public JsonResult checkUrlExists(@RequestParam("postUrl") String postUrl) {
+        final Post post = postService.findByPostUrl(postUrl, PostTypeEnum.POST_TYPE_PAGE.getDesc());
+        if (null != post) {
+            return new JsonResult(ResultCodeEnum.FAIL.getCode(), localeMessageUtil.getMessage("code.admin.common.url-is-exists"));
         }
-        return new JsonResult(ResultCode.SUCCESS.getCode(), "");
+        return new JsonResult(ResultCodeEnum.SUCCESS.getCode(), "");
+    }
+
+    @InitBinder
+    public void initBinder(ServletRequestDataBinder binder) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+        binder.registerCustomEditor(Date.class, new CustomDateEditor(sdf, true));
     }
 }

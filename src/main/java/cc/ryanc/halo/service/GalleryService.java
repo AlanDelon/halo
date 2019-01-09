@@ -8,6 +8,10 @@ import java.util.List;
 import java.util.Optional;
 
 /**
+ * <pre>
+ *     图库业务逻辑接口
+ * </pre>
+ *
  * @author : RYAN0UP
  * @date : 2018/2/26
  */
@@ -19,7 +23,7 @@ public interface GalleryService {
      * @param gallery gallery
      * @return Gallery
      */
-    Gallery saveByGallery(Gallery gallery);
+    Gallery save(Gallery gallery);
 
     /**
      * 根据编号删除图片
@@ -27,15 +31,7 @@ public interface GalleryService {
      * @param galleryId galleryId
      * @return Gallery
      */
-    Gallery removeByGalleryId(Long galleryId);
-
-    /**
-     * 修改图片信息
-     *
-     * @param gallery gallery
-     * @return Gallery
-     */
-    Gallery updateByGallery(Gallery gallery);
+    Gallery remove(Long galleryId);
 
     /**
      * 查询所有图片 分页
@@ -43,14 +39,14 @@ public interface GalleryService {
      * @param pageable pageable
      * @return Page
      */
-    Page<Gallery> findAllGalleries(Pageable pageable);
+    Page<Gallery> findAll(Pageable pageable);
 
     /**
      * 查询所有图片 不分页
      *
      * @return List
      */
-    List<Gallery> findAllGalleries();
+    List<Gallery> findAll();
 
     /**
      * 根据编号查询图片信息

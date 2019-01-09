@@ -5,6 +5,10 @@ import cc.ryanc.halo.model.domain.User;
 import java.util.Date;
 
 /**
+ * <pre>
+ *     用户业务逻辑接口
+ * </pre>
+ *
  * @author : RYAN0UP
  * @date : 2017/11/14
  */
@@ -15,7 +19,7 @@ public interface UserService {
      *
      * @param user user
      */
-    void saveByUser(User user);
+    void save(User user);
 
     /**
      * 根据用户名和密码查询，用于登录

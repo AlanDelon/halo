@@ -1,7 +1,7 @@
 package cc.ryanc.halo.service.impl;
 
 import cc.ryanc.halo.model.domain.User;
-import cc.ryanc.halo.model.enums.TrueFalse;
+import cc.ryanc.halo.model.enums.TrueFalseEnum;
 import cc.ryanc.halo.repository.UserRepository;
 import cc.ryanc.halo.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +11,10 @@ import java.util.Date;
 import java.util.List;
 
 /**
+ * <pre>
+ *     用户业务逻辑实现类
+ * </pre>
+ *
  * @author : RYAN0UP
  * @date : 2017/11/14
  */
@@ -26,7 +30,7 @@ public class UserServiceImpl implements UserService {
      * @param user user
      */
     @Override
-    public void saveByUser(User user) {
+    public void save(User user) {
         userRepository.save(user);
     }
 
@@ -61,7 +65,7 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public User findUser() {
-        List<User> users = userRepository.findAll();
+        final List<User> users = userRepository.findAll();
         if (users != null && users.size() > 0) {
             return users.get(0);
         } else {
@@ -88,7 +92,7 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public void updateUserLoginEnable(String enable) {
-        User user = this.findUser();
+        final User user = this.findUser();
         user.setLoginEnable(enable);
         userRepository.save(user);
     }
@@ -101,7 +105,7 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public User updateUserLoginLast(Date lastDate) {
-        User user = this.findUser();
+        final User user = this.findUser();
         user.setLoginLast(lastDate);
         userRepository.save(user);
         return user;
@@ -114,7 +118,7 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public Integer updateUserLoginError() {
-        User user = this.findUser();
+        final User user = this.findUser();
         user.setLoginError((user.getLoginError() == null ? 0 : user.getLoginError()) + 1);
         userRepository.save(user);
         return user.getLoginError();
@@ -127,8 +131,8 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public User updateUserNormal() {
-        User user = this.findUser();
-        user.setLoginEnable(TrueFalse.TRUE.getDesc());
+        final User user = this.findUser();
+        user.setLoginEnable(TrueFalseEnum.TRUE.getDesc());
         user.setLoginError(0);
         user.setLoginLast(new Date());
         userRepository.save(user);

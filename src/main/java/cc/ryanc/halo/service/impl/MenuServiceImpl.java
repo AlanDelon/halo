@@ -12,6 +12,10 @@ import java.util.List;
 import java.util.Optional;
 
 /**
+ * <pre>
+ *     菜单业务逻辑实现类
+ * </pre>
+ *
  * @author : RYAN0UP
  * @date : 2018/1/24
  */
@@ -32,7 +36,7 @@ public class MenuServiceImpl implements MenuService {
      */
     @Override
     @Cacheable(value = MENUS_CACHE_NAME, key = MENUS_CACHE_KEY)
-    public List<Menu> findAllMenus() {
+    public List<Menu> findAll() {
         return menuRepository.findAll();
     }
 
@@ -44,7 +48,7 @@ public class MenuServiceImpl implements MenuService {
      */
     @Override
     @CacheEvict(value = MENUS_CACHE_NAME, allEntries = true, beforeInvocation = true)
-    public Menu saveByMenu(Menu menu) {
+    public Menu save(Menu menu) {
         return menuRepository.save(menu);
     }
 
@@ -56,8 +60,8 @@ public class MenuServiceImpl implements MenuService {
      */
     @Override
     @CacheEvict(value = MENUS_CACHE_NAME, allEntries = true, beforeInvocation = true)
-    public Menu removeByMenuId(Long menuId) {
-        Optional<Menu> menu = this.findByMenuId(menuId);
+    public Menu remove(Long menuId) {
+        final Optional<Menu> menu = this.findByMenuId(menuId);
         menuRepository.delete(menu.get());
         return menu.get();
     }

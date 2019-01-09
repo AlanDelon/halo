@@ -2,20 +2,22 @@ package cc.ryanc.halo.web.controller.api;
 
 import cc.ryanc.halo.model.domain.Tag;
 import cc.ryanc.halo.model.dto.JsonResult;
-import cc.ryanc.halo.model.enums.ResponseStatus;
+import cc.ryanc.halo.model.enums.ResponseStatusEnum;
 import cc.ryanc.halo.service.TagService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 /**
+ * <pre>
+ *     标签API
+ * </pre>
+ *
  * @author : RYAN0UP
  * @date : 2018/6/6
  */
+@CrossOrigin
 @RestController
 @RequestMapping(value = "/api/tags")
 public class ApiTagController {
@@ -26,31 +28,63 @@ public class ApiTagController {
     /**
      * 获取所有标签
      *
+     * <p>
+     *     result json:
+     *     <pre>
+     * {
+     *     "code": 200,
+     *     "msg": "OK",
+     *     "result": [
+     *         {
+     *             "tagId": ,
+     *             "tagName": "",
+     *             "tagUrl": ""
+     *         }
+     *     ]
+     * }
+     *     </pre>
+     * </p>
+     *
      * @return JsonResult
      */
     @GetMapping
     public JsonResult tags() {
-        List<Tag> tags = tagService.findAllTags();
+        final List<Tag> tags = tagService.findAll();
         if (null != tags && tags.size() > 0) {
-            return new JsonResult(ResponseStatus.SUCCESS.getCode(), ResponseStatus.SUCCESS.getMsg(), tags);
+            return new JsonResult(ResponseStatusEnum.SUCCESS.getCode(), ResponseStatusEnum.SUCCESS.getMsg(), tags);
         } else {
-            return new JsonResult(ResponseStatus.EMPTY.getCode(), ResponseStatus.EMPTY.getMsg());
+            return new JsonResult(ResponseStatusEnum.EMPTY.getCode(), ResponseStatusEnum.EMPTY.getMsg());
         }
     }
 
     /**
      * 获取单个标签的信息
      *
+     * <p>
+     *     result json:
+     *     <pre>
+     * {
+     *     "code": 200,
+     *     "msg": "OK",
+     *     "result": {
+     *         "tagId": ,
+     *         "tagName": "",
+     *         "tagUrl": ""
+     *     }
+     * }
+     *     </pre>
+     * </p>
+     *
      * @param tagUrl tagUrl
      * @return JsonResult
      */
     @GetMapping(value = "/{tagUrl}")
     public JsonResult tags(@PathVariable("tagUrl") String tagUrl) {
-        Tag tag = tagService.findByTagUrl(tagUrl);
+        final Tag tag = tagService.findByTagUrl(tagUrl);
         if (null != tag) {
-            return new JsonResult(ResponseStatus.SUCCESS.getCode(), ResponseStatus.SUCCESS.getMsg(), tag);
+            return new JsonResult(ResponseStatusEnum.SUCCESS.getCode(), ResponseStatusEnum.SUCCESS.getMsg(), tag);
         } else {
-            return new JsonResult(ResponseStatus.NOTFOUND.getCode(), ResponseStatus.NOTFOUND.getMsg());
+            return new JsonResult(ResponseStatusEnum.NOTFOUND.getCode(), ResponseStatusEnum.NOTFOUND.getMsg());
         }
     }
 }

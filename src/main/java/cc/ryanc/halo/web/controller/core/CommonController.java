@@ -1,5 +1,6 @@
 package cc.ryanc.halo.web.controller.core;
 
+import cc.ryanc.halo.model.enums.CommonParamsEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.web.servlet.error.ErrorController;
 import org.springframework.stereotype.Controller;
@@ -8,6 +9,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import javax.servlet.http.HttpServletRequest;
 
 /**
+ * <pre>
+ *     错误页面控制器
+ * </pre>
+ *
  * @author : RYAN0UP
  * @date : 2017/12/26
  */
@@ -25,8 +30,8 @@ public class CommonController implements ErrorController {
      */
     @GetMapping(value = ERROR_PATH)
     public String handleError(HttpServletRequest request) {
-        Integer statusCode = (Integer) request.getAttribute("javax.servlet.error.status_code");
-        if (statusCode == 404) {
+        final Integer statusCode = (Integer) request.getAttribute("javax.servlet.error.status_code");
+        if (statusCode.equals(CommonParamsEnum.NOT_FOUND.getValue())) {
             return "redirect:/404";
         } else {
             return "redirect:/500";
@@ -41,7 +46,7 @@ public class CommonController implements ErrorController {
      */
     @GetMapping(value = "/404")
     public String fourZeroFour() {
-        return "common/404";
+        return "common/error/404";
     }
 
     /**
@@ -52,7 +57,7 @@ public class CommonController implements ErrorController {
      */
     @GetMapping(value = "/500")
     public String fiveZeroZero() {
-        return "common/500";
+        return "common/error/500";
     }
 
     /**

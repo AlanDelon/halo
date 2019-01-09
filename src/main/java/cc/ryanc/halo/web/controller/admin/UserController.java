@@ -1,19 +1,28 @@
 package cc.ryanc.halo.web.controller.admin;
 
 import cc.ryanc.halo.model.domain.User;
+import cc.ryanc.halo.model.dto.HaloConst;
 import cc.ryanc.halo.model.dto.JsonResult;
-import cc.ryanc.halo.model.enums.ResultCode;
+import cc.ryanc.halo.model.enums.ResultCodeEnum;
 import cc.ryanc.halo.service.UserService;
+import cc.ryanc.halo.utils.LocaleMessageUtil;
 import cn.hutool.crypto.SecureUtil;
 import freemarker.template.Configuration;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpSession;
+import javax.validation.Valid;
 
 /**
+ * <pre>
+ *     后台用户管理控制器
+ * </pre>
+ *
  * @author : RYAN0UP
  * @date : 2017/12/24
  */
@@ -27,6 +36,9 @@ public class UserController {
 
     @Autowired
     private Configuration configuration;
+
+    @Autowired
+    private LocaleMessageUtil localeMessageUtil;
 
     /**
      * 获取用户信息并跳转
@@ -47,20 +59,21 @@ public class UserController {
      */
     @PostMapping(value = "save")
     @ResponseBody
-    public JsonResult saveProfile(@ModelAttribute User user, HttpSession session) {
+    public JsonResult saveProfile(@Valid @ModelAttribute User user, BindingResult result, HttpSession session) {
         try {
-            if (null != user) {
-                userService.saveByUser(user);
-                configuration.setSharedVariable("user", userService.findUser());
-                session.invalidate();
-            } else {
-                return new JsonResult(ResultCode.FAIL.getCode(), "修改失败！");
+            if (result.hasErrors()) {
+                for (ObjectError error : result.getAllErrors()) {
+                    return new JsonResult(ResultCodeEnum.FAIL.getCode(), error.getDefaultMessage());
+                }
             }
+            userService.save(user);
+            configuration.setSharedVariable("user", userService.findUser());
+            session.removeAttribute(HaloConst.USER_SESSION_KEY);
         } catch (Exception e) {
-            log.error("修改用户资料失败：{}", e.getMessage());
-            return new JsonResult(ResultCode.FAIL.getCode(), "修改失败！");
+            log.error("Failed to modify user profile: {}", e.getMessage());
+            return new JsonResult(ResultCodeEnum.FAIL.getCode(), localeMessageUtil.getMessage("code.admin.common.edit-failed"));
         }
-        return new JsonResult(ResultCode.SUCCESS.getCode(), "修改成功！");
+        return new JsonResult(ResultCodeEnum.SUCCESS.getCode(), localeMessageUtil.getMessage("code.admin.common.edit-success"));
     }
 
     /**
@@ -79,18 +92,18 @@ public class UserController {
                                  @ModelAttribute("userId") Long userId,
                                  HttpSession session) {
         try {
-            User user = userService.findByUserIdAndUserPass(userId, SecureUtil.md5(beforePass));
+            final User user = userService.findByUserIdAndUserPass(userId, SecureUtil.md5(beforePass));
             if (null != user) {
                 user.setUserPass(SecureUtil.md5(newPass));
-                userService.saveByUser(user);
-                session.invalidate();
+                userService.save(user);
+                session.removeAttribute(HaloConst.USER_SESSION_KEY);
             } else {
-                return new JsonResult(ResultCode.FAIL.getCode(), "原密码错误！");
+                return new JsonResult(ResultCodeEnum.FAIL.getCode(), localeMessageUtil.getMessage("code.admin.user.old-password-error"));
             }
         } catch (Exception e) {
-            log.error("修改密码失败：{}", e.getMessage());
-            return new JsonResult(ResultCode.FAIL.getCode(), "密码修改失败！");
+            log.error("Password change failed: {}", e.getMessage());
+            return new JsonResult(ResultCodeEnum.FAIL.getCode(), localeMessageUtil.getMessage("code.admin.user.update-password-failed"));
         }
-        return new JsonResult(ResultCode.SUCCESS.getCode(), "修改密码成功！");
+        return new JsonResult(ResultCodeEnum.SUCCESS.getCode(), localeMessageUtil.getMessage("code.admin.user.update-password-success"));
     }
 }

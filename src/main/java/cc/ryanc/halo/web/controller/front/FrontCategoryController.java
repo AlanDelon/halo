@@ -3,11 +3,12 @@ package cc.ryanc.halo.web.controller.front;
 import cc.ryanc.halo.model.domain.Category;
 import cc.ryanc.halo.model.domain.Post;
 import cc.ryanc.halo.model.dto.HaloConst;
-import cc.ryanc.halo.model.enums.BlogProperties;
+import cc.ryanc.halo.model.enums.BlogPropertiesEnum;
 import cc.ryanc.halo.service.CategoryService;
 import cc.ryanc.halo.service.PostService;
 import cc.ryanc.halo.web.controller.core.BaseController;
-import org.apache.commons.lang3.StringUtils;
+import cn.hutool.core.util.PageUtil;
+import cn.hutool.core.util.StrUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -22,6 +23,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import java.util.List;
 
 /**
+ * <pre>
+ *     前台文章分类控制器
+ * </pre>
+ *
  * @author : RYAN0UP
  * @date : 2018/4/26
  */
@@ -39,10 +44,12 @@ public class FrontCategoryController extends BaseController {
      * 分类列表页面
      *
      * @param model model
+     *
      * @return String
      */
+    @GetMapping
     public String categories(Model model) {
-        List<Category> categories = categoryService.findAllCategories();
+        final List<Category> categories = categoryService.findAll();
         model.addAttribute("categories", categories);
         return this.render("categories");
     }
@@ -52,6 +59,7 @@ public class FrontCategoryController extends BaseController {
      *
      * @param model   model
      * @param cateUrl cateUrl
+     *
      * @return string
      */
     @GetMapping(value = "{cateUrl}")
@@ -66,24 +74,28 @@ public class FrontCategoryController extends BaseController {
      * @param model   model
      * @param cateUrl 分类目录路径
      * @param page    页码
+     *
      * @return String
      */
     @GetMapping("{cateUrl}/page/{page}")
     public String categories(Model model,
                              @PathVariable("cateUrl") String cateUrl,
                              @PathVariable("page") Integer page) {
-        Category category = categoryService.findByCateUrl(cateUrl);
+        final Category category = categoryService.findByCateUrl(cateUrl);
         if (null == category) {
             return this.renderNotFound();
         }
-        Sort sort = new Sort(Sort.Direction.DESC, "postDate");
-        Integer size = 10;
-        if (!StringUtils.isBlank(HaloConst.OPTIONS.get(BlogProperties.INDEX_POSTS.getProp()))) {
-            size = Integer.parseInt(HaloConst.OPTIONS.get(BlogProperties.INDEX_POSTS.getProp()));
+        final Sort sort = new Sort(Sort.Direction.DESC, "postDate");
+        int size = 10;
+        if (StrUtil.isNotBlank(HaloConst.OPTIONS.get(BlogPropertiesEnum.INDEX_POSTS.getProp()))) {
+            size = Integer.parseInt(HaloConst.OPTIONS.get(BlogPropertiesEnum.INDEX_POSTS.getProp()));
         }
-        Pageable pageable = PageRequest.of(page - 1, size, sort);
-        Page<Post> posts = postService.findPostByCategories(category, pageable);
+        final Pageable pageable = PageRequest.of(page - 1, size, sort);
+        final Page<Post> posts = postService.findPostByCategories(category, pageable);
+        final int[] rainbow = PageUtil.rainbow(page, posts.getTotalPages(), 3);
+        model.addAttribute("is_categories", true);
         model.addAttribute("posts", posts);
+        model.addAttribute("rainbow", rainbow);
         model.addAttribute("category", category);
         return this.render("category");
     }

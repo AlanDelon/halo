@@ -4,6 +4,7 @@ import cc.ryanc.halo.model.domain.Tag;
 import cc.ryanc.halo.repository.TagRepository;
 import cc.ryanc.halo.service.TagService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -11,11 +12,17 @@ import java.util.List;
 import java.util.Optional;
 
 /**
+ * <pre>
+ *     标签业务逻辑实现类
+ * </pre>
+ *
  * @author : RYAN0UP
  * @date : 2018/1/12
  */
 @Service
 public class TagServiceImpl implements TagService {
+
+    private static final String POSTS_CACHE_NAME = "posts";
 
     @Autowired
     private TagRepository tagRepository;
@@ -27,7 +34,8 @@ public class TagServiceImpl implements TagService {
      * @return Tag
      */
     @Override
-    public Tag saveByTag(Tag tag) {
+    @CacheEvict(value = POSTS_CACHE_NAME, allEntries = true, beforeInvocation = true)
+    public Tag save(Tag tag) {
         return tagRepository.save(tag);
     }
 
@@ -38,8 +46,9 @@ public class TagServiceImpl implements TagService {
      * @return Tag
      */
     @Override
-    public Tag removeByTagId(Long tagId) {
-        Optional<Tag> tag = findByTagId(tagId);
+    @CacheEvict(value = POSTS_CACHE_NAME, allEntries = true, beforeInvocation = true)
+    public Tag remove(Long tagId) {
+        final Optional<Tag> tag = findByTagId(tagId);
         tagRepository.delete(tag.get());
         return tag.get();
     }
@@ -50,7 +59,7 @@ public class TagServiceImpl implements TagService {
      * @return List
      */
     @Override
-    public List<Tag> findAllTags() {
+    public List<Tag> findAll() {
         return tagRepository.findAll();
     }
 
@@ -100,10 +109,10 @@ public class TagServiceImpl implements TagService {
      */
     @Override
     public List<Tag> strListToTagList(String tagList) {
-        String[] tags = tagList.split(",");
-        List<Tag> tagsList = new ArrayList<>();
+        final String[] tags = tagList.split(",");
+        final List<Tag> tagsList = new ArrayList<>();
         for (String tag : tags) {
-            Tag t = findTagByTagName(tag);
+            final Tag t = findTagByTagName(tag);
             Tag nt = null;
             if (null != t) {
                 tagsList.add(t);
@@ -111,7 +120,7 @@ public class TagServiceImpl implements TagService {
                 nt = new Tag();
                 nt.setTagName(tag);
                 nt.setTagUrl(tag);
-                tagsList.add(saveByTag(nt));
+                tagsList.add(save(nt));
             }
         }
         return tagsList;

@@ -12,6 +12,10 @@ import java.util.List;
 import java.util.Optional;
 
 /**
+ * <pre>
+ *     友情链接业务逻辑实现类
+ * </pre>
+ *
  * @author : RYAN0UP
  * @date : 2017/11/14
  */
@@ -33,7 +37,7 @@ public class LinkServiceImpl implements LinkService {
      */
     @Override
     @CacheEvict(value = LINKS_CACHE_NAME, allEntries = true, beforeInvocation = true)
-    public Link saveByLink(Link link) {
+    public Link save(Link link) {
         return linkRepository.save(link);
     }
 
@@ -45,8 +49,8 @@ public class LinkServiceImpl implements LinkService {
      */
     @Override
     @CacheEvict(value = LINKS_CACHE_NAME, allEntries = true, beforeInvocation = true)
-    public Link removeByLinkId(Long linkId) {
-        Optional<Link> link = this.findByLinkId(linkId);
+    public Link remove(Long linkId) {
+        final Optional<Link> link = this.findByLinkId(linkId);
         linkRepository.delete(link.get());
         return link.get();
     }
@@ -58,7 +62,7 @@ public class LinkServiceImpl implements LinkService {
      */
     @Override
     @Cacheable(value = LINKS_CACHE_NAME, key = LINKS_CACHE_KEY)
-    public List<Link> findAllLinks() {
+    public List<Link> findAll() {
         return linkRepository.findAll();
     }
 

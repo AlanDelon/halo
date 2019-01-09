@@ -27,7 +27,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
      *
      * @return List
      */
-    @Query(value = "SELECT * FROM halo_post where post_type='post' ORDER BY post_date DESC LIMIT 5", nativeQuery = true)
+    @Query(value = "SELECT * FROM halo_post WHERE post_type='post' ORDER BY post_date DESC LIMIT 5", nativeQuery = true)
     List<Post> findTopFive();
 
     /**
@@ -129,7 +129,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
      *
      * @return List
      */
-    @Query(value = "select year(post_date) as year,month(post_date) as month,count(*) as count from halo_post where post_status=0 and post_type='post' group by year(post_date),month(post_date) order by year desc,month desc", nativeQuery = true)
+    @Query(value = "SELECT YEAR(post_date) AS YEAR,MONTH(post_date) AS MONTH,COUNT(*) AS COUNT FROM halo_post WHERE post_status=0 and post_type='post' GROUP BY YEAR(post_date),MONTH(post_date) ORDER BY YEAR DESC,MONTH DESC", nativeQuery = true)
     List<Object[]> findPostGroupByYearAndMonth();
 
     /**
@@ -137,8 +137,31 @@ public interface PostRepository extends JpaRepository<Post, Long> {
      *
      * @return List
      */
-    @Query(value = "select year(post_date) as year,count(*) as count from halo_post where post_status=0 and post_type='post' group by year(post_date) order by year desc", nativeQuery = true)
+    @Query(value = "SELECT YEAR(post_date) AS YEAR,COUNT(*) AS COUNT FROM halo_post WHERE post_status=0 AND post_type='post' GROUP BY YEAR(post_date) ORDER BY YEAR DESC", nativeQuery = true)
     List<Object[]> findPostGroupByYear();
+
+
+    /**
+     * @Author Aquan
+     * @Description 查询文章归档信息 查询所有文章
+     * @Date 2019.1.4 11:19
+     * @Param
+     * @return List
+     **/
+    @Query(value = "SELECT *,YEAR(post_date) AS YEAR FROM halo_post WHERE post_status=0 AND post_type='post' ORDER BY post_date DESC", nativeQuery = true)
+    List<Post> findAllPost();
+
+    /**
+     * @Author Aquan
+     * @Description 查询文章总数
+     * @Date 2019.1.4 15:03
+     * @Param
+     * @return Integer
+     **/
+    @Query(value = "SELECT count(1) AS COUNT FROM halo_post WHERE post_status=0 AND post_type='post'", nativeQuery = true)
+    Integer totalAllPostCount();
+
+
 
     /**
      * 根据年份和月份查询文章
@@ -147,7 +170,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
      * @param month month
      * @return List
      */
-    @Query(value = "select *,year(post_date) as year,month(post_date) as month from halo_post where post_status=0 and post_type='post' and year(post_date)=:year and month(post_date)=:month order by post_date desc", nativeQuery = true)
+    @Query(value = "SELECT *,YEAR(post_date) AS YEAR,MONTH(post_date) AS MONTH FROM halo_post WHERE post_status=0 and post_type='post' AND YEAR(post_date)=:year AND MONTH(post_date)=:month ORDER BY post_date DESC", nativeQuery = true)
     List<Post> findPostByYearAndMonth(@Param("year") String year, @Param("month") String month);
 
     /**
@@ -156,7 +179,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
      * @param year year
      * @return List
      */
-    @Query(value = "select *,year(post_date) as year from halo_post where post_status=0 and post_type='post' and year(post_date)=:year order by post_date desc", nativeQuery = true)
+    @Query(value = "SELECT *,YEAR(post_date) AS YEAR FROM halo_post WHERE post_status=0 AND post_type='post' AND YEAR(post_date)=:year ORDER BY post_date DESC", nativeQuery = true)
     List<Post> findPostByYear(@Param("year") String year);
 
     /**
@@ -167,7 +190,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
      * @param pageable pageable
      * @return Page
      */
-    @Query(value = "select * from halo_post where post_status=0 and post_type='post' and year(post_date)=:year and month(post_date)=:month order by post_date desc", countQuery = "select count(*) from halo_post where post_status=0 and year(post_date)=:year and month(post_date)=:month", nativeQuery = true)
+    @Query(value = "SELECT * FROM halo_post WHERE post_status=0 and post_type='post' AND YEAR(post_date)=:year AND MONTH(post_date)=:month ORDER BY post_date DESC", countQuery = "SELECT COUNT(*) FROM halo_post WHERE post_status=0 AND YEAR(post_date)=:year AND MONTH(post_date)=:month", nativeQuery = true)
     Page<Post> findPostByYearAndMonth(@Param("year") String year, @Param("month") String month, Pageable pageable);
 
     /**
@@ -205,7 +228,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
      * @param pageable 分页信息
      * @return Page
      */
-    @Query(value = "select * from halo_post where post_status = 0 and post_type='post' and post_title like '%=:keyword%' or post_content like '%=:keyword%'", nativeQuery = true)
+    @Query(value = "SELECT * FROM halo_post WHERE post_status = 0 AND post_type='post' AND post_title LIKE '%=:keyword%' OR post_content LIKE '%=:keyword%'", nativeQuery = true)
     Page<Post> findPostByPostTitleLikeOrPostContentLikeAndPostTypeAndPostStatus(String keyword, Pageable pageable);
 
     /**
@@ -221,7 +244,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
      *
      * @return Long
      */
-    @Query(value = "select sum(post_views) from halo_post", nativeQuery = true)
+    @Query(value = "SELECT SUM(post_views) FROM halo_post", nativeQuery = true)
     Long getPostViewsSum();
 
     /**
@@ -232,4 +255,13 @@ public interface PostRepository extends JpaRepository<Post, Long> {
      * @return 文章数量
      */
     Integer countAllByPostStatusAndPostType(Integer status, String postType);
+
+    /**
+     * 获取指定条数的文章
+     *
+     * @param limit 条数
+     * @return List
+     */
+    @Query(value = "SELECT * FROM halo_post WHERE post_status = 0 AND post_type = 'post' ORDER BY post_date DESC LIMIT :limit",nativeQuery = true)
+    List<Post> getPostsByLimit(@Param(value = "limit") int limit);
 }
